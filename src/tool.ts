@@ -6,16 +6,24 @@ import {
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import { createApiClient } from "./services/api/index.js";
-import { exampleListTool } from "./handlers/index.js";
+import {
+  judgmentAddTool,
+  projectContextTool,
+  projectCreateTool,
+  projectListTool,
+} from "./handlers/index.js";
 import { InvalidInputError, failure } from "./handlers/common.js";
 import type { ToolDefinition, ToolHandler } from "./schemas/tool.js";
 
-const READ_ONLY_TOOLS = new Set(["example_list"]);
+const READ_ONLY_TOOLS = new Set(["project_list", "project_context"]);
 const DESTRUCTIVE_TOOLS = new Set<string>();
-const IDEMPOTENT_TOOLS = new Set<string>();
+const IDEMPOTENT_TOOLS = new Set(["project_create", "judgment_add"]);
 
 const TOOL_TITLES: Record<string, string> = {
-  example_list: "List examples",
+  project_list: "List projects",
+  project_create: "Create a project",
+  project_context: "Get project context",
+  judgment_add: "Add judgments",
 };
 
 function withToolAnnotations(tool: ToolHandler): ToolHandler {
@@ -40,7 +48,12 @@ function withToolAnnotations(tool: ToolHandler): ToolHandler {
 }
 
 export function getRegisteredTools(): ToolHandler[] {
-  return [exampleListTool].map(withToolAnnotations);
+  return [
+    projectListTool,
+    projectCreateTool,
+    projectContextTool,
+    judgmentAddTool,
+  ].map(withToolAnnotations);
 }
 
 function matchesType(type: unknown, value: unknown): boolean {

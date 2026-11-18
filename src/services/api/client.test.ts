@@ -16,7 +16,7 @@ describe("api client", () => {
   it("forwards the request Bearer token to the API", async () => {
     const client = createApiClient(api.url, "oat_secret");
 
-    await client.get("/api/v1/mcp/examples");
+    await client.get("/api/v1/mcp/projects");
 
     expect(api.requests).toHaveLength(1);
     expect(api.requests[0].headers.authorization).toBe("Bearer oat_secret");
@@ -77,7 +77,7 @@ describe("api client", () => {
   it("reads the flat {error, code} body shape", async () => {
     api.respondWith(() => ({
       status: 404,
-      body: { error: "example not found", code: "not_found" },
+      body: { error: "project not found", code: "not_found" },
     }));
     const client = createApiClient(api.url, "oat_secret");
 
@@ -87,7 +87,7 @@ describe("api client", () => {
     expect(error).toMatchObject({
       status: 404,
       code: "not_found",
-      message: "example not found",
+      message: "project not found",
     });
   });
 

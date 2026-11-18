@@ -1,0 +1,14 @@
+{
+  "name": "deemento",
+  "displayName": "Deemento",
+  "description": "Deemento — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated.",
+  "version": "0.1.0",
+  "interface": {
+    "displayName": "Deemento",
+    "developerName": "mizulba",
+    "shortDescription": "Keep the judgments you make while building with AI, and show the ones you choose.",
+    "longDescription": "Deemento — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated.",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/icon.png"
+  }
+}

@@ -1,8 +1,7 @@
 {
   "name": "deemento-mcp",
   "version": "0.1.0",
-  "description": "deemento MCP Server",
-  "private": true,
+  "description": "Deemento MCP Server",
   "main": "dist/http.js",
   "type": "module",
   "scripts": {
@@ -11,13 +10,26 @@
     "start": "node dist/http.js",
     "dev": "HOST=127.0.0.1 ts-node --esm src/http.ts",
     "format": "prettier --write .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "version": "node scripts/sync-plugin-version.mjs && git add src/plugin/.claude-plugin/plugin.json src/plugin/.codex-plugin/plugin.json"
   },
   "keywords": [
     "mcp",
-    "deemento"
+    "deemento",
+    "ai",
+    "judgment"
   ],
-  "license": "UNLICENSED",
+  "author": "mizulba",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mizulba-dev/deemento-mcp.git"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.txt"
+  ],
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
     "zod": "3.25.76",

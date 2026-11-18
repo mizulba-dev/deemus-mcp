@@ -218,7 +218,7 @@ describe("HTTP MCP server", () => {
         jsonrpc: "2.0",
         id: 2,
         method: "tools/call",
-        params: { name: "example_list", arguments: {} },
+        params: { name: "project_list", arguments: {} },
       }),
     });
 
@@ -230,7 +230,7 @@ describe("HTTP MCP server", () => {
   });
 
   it("lists tools and forwards the Bearer token on tool calls (stateless)", async () => {
-    api.respondWith(() => ({ body: { examples: [] } }));
+    api.respondWith(() => ({ body: { items: [] } }));
     const client = new Client({ name: "test", version: "0" });
     const transport = new StreamableHTTPClientTransport(
       new URL(`${base}/mcp`),
@@ -241,21 +241,59 @@ describe("HTTP MCP server", () => {
     await client.connect(transport);
 
     const tools = await client.listTools();
-    expect(tools.tools).toHaveLength(1);
+    expect(tools.tools.map((t) => t.name)).toEqual([
+      "project_list",
+      "project_create",
+      "project_context",
+      "judgment_add",
+    ]);
 
     const result = await client.callTool({
-      name: "example_list",
+      name: "project_list",
       arguments: {},
     });
     await client.close();
 
     expect(result.isError).toBeFalsy();
-    expect(result.structuredContent).toEqual({ examples: [] });
+    expect(result.structuredContent).toEqual({ items: [] });
     const toolRequests = api.requests.filter(
       (r) => r.path !== "/api/v1/mcp/session",
     );
     expect(toolRequests).toHaveLength(1);
-    expect(toolRequests[0].path).toBe("/api/v1/mcp/examples");
+    expect(toolRequests[0].path).toBe("/api/v1/mcp/projects");
     expect(toolRequests[0].headers.authorization).toBe("Bearer oat_flow");
+  });
+
+  it("calls judgment_add through the HTTP transport", async () => {
+    api.respondWith(() => ({
+      body: { results: [{ status: "saved", judgment_id: 5 }] },
+    }));
+    const client = new Client({ name: "test", version: "0" });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(`${base}/mcp`), {
+        requestInit: { headers: { authorization: "Bearer oat_flow" } },
+      }),
+    );
+
+    const result = await client.callTool({
+      name: "judgment_add",
+      arguments: {
+        project_id: 7,
+        source: { tool: "claude-code" },
+        judgments: [],
+      },
+    });
+    await client.close();
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual({
+      results: [{ status: "saved", judgment_id: 5 }],
+    });
+    const toolRequests = api.requests.filter(
+      (r) => r.path !== "/api/v1/mcp/session",
+    );
+    expect(toolRequests).toHaveLength(1);
+    expect(toolRequests[0].method).toBe("POST");
+    expect(toolRequests[0].path).toBe("/api/v1/mcp/projects/7/judgments");
   });
 });
