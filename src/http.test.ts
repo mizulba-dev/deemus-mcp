@@ -29,7 +29,7 @@ describe("HTTP MCP server", () => {
   const originalPublicOrigin = process.env.MCP_PUBLIC_ORIGIN;
 
   beforeEach(async () => {
-    process.env.MCP_PUBLIC_ORIGIN = "https://mcp.keel.test";
+    process.env.MCP_PUBLIC_ORIGIN = "https://mcp.deemento.test";
     api = await startMockApi();
     server = await startHttpMcpServer({
       apiUrl: api.url,
@@ -71,9 +71,9 @@ describe("HTTP MCP server", () => {
 
     expect(response.status).toBe(200);
     expect(body).toMatchObject({
-      resource: "https://mcp.keel.test/mcp",
+      resource: "https://mcp.deemento.test/mcp",
       authorization_servers: [api.url],
-      scopes_supported: ["keel.read", "keel.write"],
+      scopes_supported: ["deemento.read", "deemento.write"],
     });
   });
 
@@ -98,7 +98,7 @@ describe("HTTP MCP server", () => {
 
     expect(response.status).toBe(401);
     expect(response.headers.get("www-authenticate")).toContain(
-      'Bearer resource_metadata="https://mcp.keel.test/.well-known/oauth-protected-resource"',
+      'Bearer resource_metadata="https://mcp.deemento.test/.well-known/oauth-protected-resource"',
     );
     expect(api.requests).toHaveLength(0);
   });
@@ -133,7 +133,7 @@ describe("HTTP MCP server", () => {
       "https://claude.com",
       "https://chatgpt.com",
       "https://chat.openai.com",
-      "https://mcp.keel.test",
+      "https://mcp.deemento.test",
       api.url,
     ]) {
       const response = await fetch(`${base}/mcp`, {
@@ -182,7 +182,7 @@ describe("HTTP MCP server", () => {
     const challenge = response.headers.get("www-authenticate") ?? "";
     expect(challenge).toContain('error="invalid_token"');
     expect(challenge).toContain(
-      'resource_metadata="https://mcp.keel.test/.well-known/oauth-protected-resource"',
+      'resource_metadata="https://mcp.deemento.test/.well-known/oauth-protected-resource"',
     );
     expect(api.requests.map((r) => r.path)).toEqual(["/api/v1/mcp/session"]);
     expect(api.requests[0].headers.authorization).toBe("Bearer oat_expired");

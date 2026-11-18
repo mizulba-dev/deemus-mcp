@@ -1,7 +1,7 @@
 {
-  "name": "keel-mcp",
+  "name": "deemento-mcp",
   "version": "0.1.0",
-  "description": "keel MCP Server",
+  "description": "deemento MCP Server",
   "private": true,
   "main": "dist/http.js",
   "type": "module",
@@ -15,7 +15,7 @@
   },
   "keywords": [
     "mcp",
-    "keel"
+    "deemento"
   ],
   "license": "UNLICENSED",
   "dependencies": {
