@@ -1,0 +1,33 @@
+{
+  "name": "keel-mcp",
+  "version": "0.1.0",
+  "description": "keel MCP Server",
+  "private": true,
+  "main": "dist/http.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "start": "node dist/http.js",
+    "dev": "HOST=127.0.0.1 ts-node --esm src/http.ts",
+    "format": "prettier --write .",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "keel"
+  ],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "zod": "3.25.76",
+    "zod-to-json-schema": "3.25.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.41",
+    "prettier": "^3.5.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "vitest": "4.1.10"
+  }
+}
