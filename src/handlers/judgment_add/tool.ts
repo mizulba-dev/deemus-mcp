@@ -14,15 +14,15 @@ export const judgmentAddTool: ToolHandler = {
     description:
       "Record judgments the user made while building with AI, up to 20 per call, for one project. " +
       "Rules: " +
-      "1) Call project_context first and pick the feature of each judgment from its list. " +
-      "2) Reuse an existing feature whenever it fits; create a new feature only when none does, by sending feature.name and feature.summary. " +
-      "3) Each result keeps the order of the input. If a result has status needs_feature_choice, nothing was saved for it: choose one of its candidates (feature.id) or send it again with feature.create_new=true, and resend only that judgment. " +
+      "1) Call project_context first and pick the workstream of each judgment from its list. " +
+      "2) Reuse an existing workstream whenever it fits; create a new workstream only when none does, by sending workstream.name and workstream.summary. " +
+      "3) Each result keeps the order of the input. If a result has status needs_workstream_choice, nothing was saved for it: choose one of its candidates (workstream.id) or send it again with workstream.create_new=true, and resend only that judgment. " +
       "4) When you cannot decide between candidates, ask the user. " +
       "5) When the record does not state the reason, leave the reason empty; never fill it in by guessing. " +
       "6) Do not write secrets (keys, tokens, passwords) or personal information. " +
-      "7) If needs_feature_choice comes with no candidates, or with reason similarity_unavailable, the server could not compare features; sending the same request again usually returns the same result, so do not just retry. Pick a fitting feature from the project_context list yourself and resend with its feature.id, or resend with feature.create_new=true when none fits. " +
-      "8) To put several judgments into the same new feature, send only the first one with the new feature.name (with create_new=true if needed), then send the others with the feature.id returned for it. Do not send create_new=true again with a reworded name; a different name creates a separate feature (the exact same name reuses the existing one). " +
-      "Results are independent per judgment: saved, needs_feature_choice or invalid (see errors). Sending the same session_id and title again does not create a duplicate.",
+      "7) If needs_workstream_choice comes with no candidates, or with reason similarity_unavailable, the server could not compare workstreams; sending the same request again usually returns the same result, so do not just retry. Pick a fitting workstream from the project_context list yourself and resend with its workstream.id, or resend with workstream.create_new=true when none fits. " +
+      "8) To put several judgments into the same new workstream, send only the first one with the new workstream.name (with create_new=true if needed), then send the others with the workstream.id returned for it. Do not send create_new=true again with a reworded name; a different name creates a separate workstream (the exact same name reuses the existing one). " +
+      "Results are independent per judgment: saved, needs_workstream_choice or invalid (see errors). Sending the same session_id and title again does not create a duplicate.",
     inputSchema: {
       type: "object",
       properties: {
@@ -121,11 +121,11 @@ export const judgmentAddTool: ToolHandler = {
                   domain: { type: "array", items: { type: "string" } },
                 },
               },
-              feature: {
+              workstream: {
                 type: "object",
                 description:
-                  "Either {id} of an existing feature from project_context, or {name, summary?, create_new?} for a feature that is not in the list. " +
-                  "summary is a one-sentence description of the feature. create_new=true forces a new feature even when similar ones exist.",
+                  "Either {id} of an existing workstream from project_context, or {name, summary?, create_new?} for a workstream that is not in the list. " +
+                  "summary is a one-sentence description of the workstream. create_new=true forces a new workstream even when similar ones exist.",
                 properties: {
                   id: { type: "integer" },
                   name: { type: "string", description: "1-80 characters." },
@@ -137,7 +137,7 @@ export const judgmentAddTool: ToolHandler = {
                 },
               },
             },
-            required: ["title", "involvement", "detail", "feature"],
+            required: ["title", "involvement", "detail", "workstream"],
           },
         },
       },

@@ -13,7 +13,7 @@ them with the bundled script, extract the judgments yourself, and send them to
 the Deemento MCP tools.
 
 Reply to the user in the user's language, and write every recorded judgment
-(titles, situations, decisions, feature names and summaries) in the user's
+(titles, situations, decisions, workstream names and summaries) in the user's
 language too.
 
 ## Tools
@@ -51,8 +51,8 @@ is not connected and stop. Do not write judgments anywhere else.
      the repository: ask the user which project to use. Do not guess.
 
 3. **Load the project context.** Call `project_context` with the project id.
-   Keep its `features` (id, name, summary), `skills` (tech and domain names)
-   and `feature_rule` (how coarse a feature should be) for the rules below.
+   Keep its `workstreams` (id, name, summary), `skills` (tech and domain names)
+   and `workstream_rule` (how coarse a workstream should be) for the rules below.
 
 4. **Condense each session.** Run the bundled script with `node`, passing the
    path of this skill's `references/prep.mjs`:
@@ -132,33 +132,33 @@ is not connected and stop. Do not write judgments anywhere else.
 
 6. **Handle the results.** Results come back in the order you sent them.
    - `saved`: done. `duplicate: true` means it was already recorded.
-   - `needs_feature_choice`: nothing was saved for that judgment. Choose one
-     of `candidates` (send `feature: {id}`), or, if none of them is the same
-     feature, send `feature: {name, summary, create_new: true}`. Resend only
+   - `needs_workstream_choice`: nothing was saved for that judgment. Choose one
+     of `candidates` (send `workstream: {id}`), or, if none of them is the same
+     workstream, send `workstream: {name, summary, create_new: true}`. Resend only
      that judgment. When you cannot tell which candidate is right, ask the
      user.
-   - `needs_feature_choice` with empty `candidates`, or with `reason`
-     `similarity_unavailable`: the server could not compare features. Sending
+   - `needs_workstream_choice` with empty `candidates`, or with `reason`
+     `similarity_unavailable`: the server could not compare workstreams. Sending
      the same request again usually returns the same result, so do not just
      retry. Look at the `project_context`
-     feature list yourself and resend with the `id` of a fitting feature, or
+     workstream list yourself and resend with the `id` of a fitting workstream, or
      with `create_new: true` when none fits.
    - `invalid`: read `errors`, fix that judgment, and resend only it.
 
-   When several judgments go to the same new feature, send only the first one
+   When several judgments go to the same new workstream, send only the first one
    with the new name (with `create_new: true` if needed), then send the others
-   with the feature `id` returned for it. Never send `create_new: true` again
-   with a reworded name: a different name creates a separate feature (the
+   with the workstream `id` returned for it. Never send `create_new: true` again
+   with a reworded name: a different name creates a separate workstream (the
    exact same name reuses the existing one).
 
-   Before the next session, call `project_context` again so features created
+   Before the next session, call `project_context` again so workstreams created
    for this session are in the list and get reused.
 
 7. **Report to the user.** After the last session, tell the user:
    - how many judgments were recorded, by involvement (`self`, `adopted`,
      `delegated`), and how many were already recorded;
-   - how many judgments went to each feature;
-   - the features that were newly created;
+   - how many judgments went to each workstream;
+   - the workstreams that were newly created;
    - the judgments recorded with an empty reason (`self` without `reason`,
      `adopted` without `own_reason`), so the user can add the reason in
      Deemento;
@@ -169,11 +169,11 @@ is not connected and stop. Do not write judgments anywhere else.
 
 ## What counts as a judgment
 
-A judgment is one decision in a specific situation: which feature, what the
+A judgment is one decision in a specific situation: which workstream, what the
 problem was, and what was decided. It is material the user may later show to
 others, for example to explain in an interview what they decided and why.
 
-- **Never write a general lesson.** Always state the situation: which feature,
+- **Never write a general lesson.** Always state the situation: which workstream,
   and what the user was struggling with (`situation`, or `request` for
   delegated work).
 - **Skip trivial things**: typo fixes, requests to run a command, permission
@@ -266,7 +266,7 @@ Limits (`judgment_add` rejects values over them):
 - `options`: up to 6; each `label` 1 to 300 characters.
 - `ai_decisions`: up to 10; each 1 to 300 characters.
 - `evidence`: up to 3; each 1 to 200 characters.
-- A new feature: `name` 1 to 80 characters, `summary` up to 200.
+- A new workstream: `name` 1 to 80 characters, `summary` up to 200.
 - Up to 20 judgments per call.
 
 **Never fill in a reason by guessing.** When the record does not state why the
@@ -288,18 +288,19 @@ only picked an option, leave `evidence` empty: the option text was written by
 the AI. Join line breaks into one line. When a quote contains an email
 address or a secret, mask that part or drop the quote.
 
-### Features
+### Workstreams
 
-- Pick the feature from the `project_context` list whenever one fits, and send
+- Pick the workstream from the `project_context` list whenever one fits, and send
   its `id`.
 - Only when none fits, send a new `name` with a one-sentence `summary`,
-  following `feature_rule`.
-- **Never name a feature after the topic of a single judgment.** A feature is
-  something the user built; many judgments belong to it.
-- Judgments that belong to no feature (rules for the whole repository, how
-  development is run, when to hand work to the AI) go to a single feature for
-  the way of working. Use it if the list already has one; otherwise create one,
-  named in the user's language for "how we develop". Keep one such feature per
+  following `workstream_rule`.
+- **Never name a workstream after the topic of a single judgment.** A workstream is
+  something the user worked on: a feature they built, a release or publishing
+  task, a shared foundation, and so on. Many judgments belong to it.
+- Judgments that do not fit a specific piece of work (rules for the whole
+  repository, how development is run, when to hand work to the AI) go to the
+  single workstream for the way of working. Use it if the list already has one; otherwise create one,
+  named in the user's language for "how we develop". Keep one such workstream per
   project.
 
 ### Judgments about another product

@@ -21,7 +21,10 @@ const judgmentsBody = {
         decision: "Retry up to three times.",
         reason: "",
       },
-      feature: { name: "Payment retry", summary: "Retries failed payments." },
+      workstream: {
+        name: "Payment retry",
+        summary: "Retries failed payments.",
+      },
     },
   ],
 };
@@ -58,15 +61,15 @@ describe("tool definitions", () => {
     const { description } = byName("judgment_add").definition;
     for (const phrase of [
       "project_context first",
-      "existing feature",
-      "needs_feature_choice",
+      "existing workstream",
+      "needs_workstream_choice",
       "ask the user",
       "leave the reason empty",
       "secrets",
       "no candidates, or with reason similarity_unavailable",
       "sending the same request again usually returns the same result",
-      "send only the first one with the new feature.name",
-      "the feature.id returned for it",
+      "send only the first one with the new workstream.name",
+      "the workstream.id returned for it",
       "Do not send create_new=true again with a reworded name",
       "the exact same name reuses the existing one",
     ]) {
@@ -101,6 +104,33 @@ describe("validateArgs", () => {
       "project_id must be of type integer",
     );
     expect(validateArgs(def, { project_id: 1 })).toBeNull();
+  });
+
+  it("exposes workstream as the required grouping of each judgment", () => {
+    const schema = byName("judgment_add").definition.inputSchema as {
+      properties: {
+        judgments: {
+          items: {
+            properties: Record<string, { properties?: object }>;
+            required: string[];
+          };
+        };
+      };
+    };
+    const item = schema.properties.judgments.items;
+    expect(item.required).toContain("workstream");
+    expect(Object.keys(item.properties.workstream.properties ?? {})).toEqual([
+      "id",
+      "name",
+      "summary",
+      "create_new",
+    ]);
+  });
+
+  it("does not mention the old name feature in any tool definition", () => {
+    for (const tool of tools) {
+      expect(JSON.stringify(tool.definition)).not.toMatch(/feature/i);
+    }
   });
 
   it("requires project_id, source and judgments for judgment_add", () => {
@@ -183,7 +213,7 @@ describe("tool to API mapping", () => {
     const response = {
       results: [
         {
-          status: "needs_feature_choice",
+          status: "needs_workstream_choice",
           reason: "similar_found",
           candidates: [
             { id: 3, name: "Payment retries", summary: "", score: 0.8 },

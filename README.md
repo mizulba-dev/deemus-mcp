@@ -10,10 +10,10 @@ The server speaks Streamable HTTP (stateless, `POST /mcp`) and forwards the clie
 | ----------------- | ---------------------------------------------------------------------------- |
 | `project_list`    | List your projects. Match `repo_names` with the repository you work in.      |
 | `project_create`  | Create a project when none matches (idempotent by name).                     |
-| `project_context` | Get a project's features, your skill names and the feature granularity rule. |
+| `project_context` | Get a project's workstreams, your skill names and the workstream granularity rule. |
 | `judgment_add`    | Record up to 20 judgments for a project.                                     |
 
-Call `project_context` before `judgment_add`, and pick each judgment's feature from the returned list. If `judgment_add` returns `needs_feature_choice`, choose from the candidates and resend only that judgment.
+Call `project_context` before `judgment_add`, and pick each judgment's workstream from the returned list. If `judgment_add` returns `needs_workstream_choice`, choose from the candidates and resend only that judgment.
 
 ## Development
 
