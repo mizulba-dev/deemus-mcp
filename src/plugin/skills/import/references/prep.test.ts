@@ -46,9 +46,9 @@ describe("prep.mjs", () => {
     expect(result.stdout.split("\n").slice(0, 5)).toEqual([
       `# Session ${session}`,
       "Directory: example-shop",
-      "Period: 2026-03-02 10:00 UTC - 2026-03-02 10:44 UTC",
-      "User messages: 4",
-      "Answered questions: 4",
+      "Period: 2026-03-02 10:00 UTC - 2026-03-02 10:53 UTC",
+      "User messages: 7",
+      "Questions: 8 (answered 4, declined or unanswered 4)",
     ]);
   });
 
@@ -92,7 +92,7 @@ describe("prep.mjs", () => {
 
     const declined = block(out, "Question: Should refunds be retried as well?");
     expect(declined).toContain(
-      "Answer: (the user declined to answer the question)",
+      "Answer: (the user chose to clarify instead of answering)",
     );
     expect(declined).not.toContain("reformulate the questions");
   });
@@ -106,6 +106,8 @@ describe("prep.mjs", () => {
       "I want to add retries for temporary failures.",
       "I'll look at the payment client first.",
       "[AI used tools: Read x2, Bash]",
+      "Also make sure a retry never charges the card twice",
+      "Keep the retry count in one constant",
       "Here is what I found.",
       "Question: How many times should a charge",
       "Next, where should the attempts be recorded?",
@@ -177,7 +179,7 @@ describe("prep.mjs", () => {
     ]) {
       expect(result.stdout, secret).not.toContain(secret);
     }
-    const message = block(result.stdout, "### User (2026-03-02 10:23 UTC)");
+    const message = block(result.stdout, "### User (2026-03-02 10:30 UTC)");
     expect(message).toContain("gateway key [REDACTED]\n");
     expect(message).toContain("ci token [REDACTED]\n");
     expect(message).toContain("aws key [REDACTED]\n");
@@ -193,7 +195,7 @@ describe("prep.mjs", () => {
   it("truncates long AI messages and says so", async () => {
     const long = block(result.stdout, "### AI\nHere is what I found.");
     expect(long).not.toContain("LONG-MESSAGE-TAIL");
-    expect(long).toMatch(/ \[truncated: \d+ more characters\]/);
+    expect(long).toContain(" [truncated: 539 more characters]");
     expect(result.stdout).toContain(
       "### AI\nI'll look at the payment client first.\n",
     );
@@ -201,7 +203,7 @@ describe("prep.mjs", () => {
     const short = await run([fixture, "--max-assistant-chars", "20"]);
     expect(short.code).toBe(0);
     expect(short.stdout).toContain("### AI\nHere is what I found [truncated: ");
-    const full = `Here is what I found. ${"The client calls the gateway once and treats any error as final. ".repeat(30)}LONG-MESSAGE-TAIL`;
+    const full = `Here is what I found. ${"The client calls the gateway once and treats any error as final. ".repeat(100)}LONG-MESSAGE-TAIL`;
     expect(short.stdout).toContain(
       `[truncated: ${full.length - 20} more characters]`,
     );
@@ -284,7 +286,9 @@ describe("prep.mjs answers recorded in various forms", () => {
     expect(answerOf("Question: 上限まで失敗した注文は、どう扱う？")).toContain(
       "  -> answered in the user's own words (not one of the options)",
     );
-    expect(out).toContain("Answered questions: 11");
+    expect(out).toContain(
+      "Questions: 13 (answered 10, declined or unanswered 3)",
+    );
   });
 
   it("recognizes every way of marking the recommended option", () => {
@@ -477,7 +481,9 @@ describe("prep.mjs structured answers", () => {
     expect(block(out, "Question 3 of 3: 再試行の待ち時間は？")).toContain(
       "Answer: 最初は 2 秒、以後は倍、最大 30 秒\n  -> answered in the user's own words (not one of the options)",
     );
-    expect(out).toContain("Answered questions: 6");
+    expect(out).toContain(
+      "Questions: 6 (answered 6, declined or unanswered 0)",
+    );
     expect(out).not.toContain("User selected answers");
     expect(out).not.toContain("Answer (as recorded)");
   });
@@ -608,6 +614,75 @@ describe("prep.mjs secret shapes", () => {
       "password: string;",
     ]) {
       expect(out.split("\n"), line).toContain(line);
+    }
+  });
+});
+
+describe("prep.mjs messages sent while the AI was working", () => {
+  let out: string;
+
+  beforeAll(async () => {
+    out = (await run([fixture])).stdout;
+  });
+
+  it("shows messages the user sent while the AI was working", () => {
+    expect(out).toContain(
+      "### User (2026-03-02 10:13 UTC, sent while the AI was working)\nAlso make sure a retry never charges the card twice; reuse the idempotency key of the first attempt.\n",
+    );
+    expect(out).toContain(
+      "### User (2026-03-02 10:15 UTC, sent while the AI was working)\nKeep the retry count in one constant so it is easy to change.\n",
+    );
+    expect(out).toContain("User messages: 7");
+    expect(out.split("Also make sure a retry never charges").length).toBe(2);
+  });
+
+  it("keeps the words of a message sent with an image", () => {
+    expect(out).toContain(
+      "### User (2026-03-02 10:15 UTC, sent while the AI was working)\nThe button in this screenshot is cut off on narrow screens; wrap the label instead of shrinking it.\n[image]\n",
+    );
+    expect(out).not.toContain("iVBORw0KGgo=");
+  });
+
+  it("does not show notifications, other agents or meta entries as the user's words", () => {
+    for (const hidden of [
+      "TASK-NOTIFICATION-TAIL",
+      "PEER-AGENT-MESSAGE",
+      "META-QUEUED-TEXT",
+    ]) {
+      expect(out, hidden).not.toContain(hidden);
+    }
+  });
+});
+
+describe("prep.mjs questions the user wanted to clarify", () => {
+  let out: string;
+
+  beforeAll(async () => {
+    out = (await run([fixture])).stdout;
+  });
+
+  it("does not show the clarify boilerplate as the user's words", () => {
+    expect(
+      block(out, "Question: Should refunds be retried as well?"),
+    ).toContain("Answer: (the user chose to clarify instead of answering)");
+    const partial = block(
+      out,
+      "Question 1 of 2: How long should a payment attempt row be kept?",
+    );
+    expect(partial).toContain(
+      "Selected before asking to clarify: 1 year\n  -> picked option 2, not the recommended one (recommended: option 1)",
+    );
+    expect(partial).toContain(
+      "Question 2 of 2: Who can see the attempts?\nOptions:\n  1. Support staff (Recommended) - Fewer people.\n  2. Everyone on the team - Easier to debug.\nAnswer: (the user chose to clarify instead of answering)",
+    );
+    for (const boilerplate of [
+      "The user wants to clarify",
+      "Start by asking them",
+      "Questions asked",
+      "No answer provided",
+      "STOP what you are doing",
+    ]) {
+      expect(out, boilerplate).not.toContain(boilerplate);
     }
   });
 });

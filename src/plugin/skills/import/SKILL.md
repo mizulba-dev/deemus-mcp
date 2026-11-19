@@ -62,12 +62,16 @@ is not connected and stop. Do not write judgments anywhere else.
    ```
 
    It prints the session as plain conversation text, oldest first:
-   - a header with the session ID, the period, and the counts of user messages
-     and answered questions;
-   - `### User` blocks: what the user typed;
-   - `### AI` blocks: what the AI wrote, cut at 1200 characters by default
-     (the cut is marked `[truncated: N more characters]`; raise the limit with
-     `--max-assistant-chars` when the cut part matters);
+   - a header with the session ID, the period, the number of user messages,
+     and `Questions: N (answered M, declined or unanswered K)`;
+   - `### User (...)` blocks: what the user typed. A heading that ends with
+     `sent while the AI was working` is a message the user sent while the AI
+     was in the middle of a task, often to stop or redirect it. Treat it like
+     any other user message;
+   - `### AI` blocks: what the AI wrote, cut at 6000 characters by default
+     (the cut is marked `[truncated: N more characters]`). When a cut hides
+     what a judgment depends on (the AI's options, a list of findings), run
+     the script again with a higher `--max-assistant-chars`;
    - `[AI used tools: ...]`: the names of the tools the AI used, without their
      inputs or results;
    - `### AI asked the user (asked ..., answered ...)` blocks: multiple-choice
@@ -78,6 +82,10 @@ is not connected and stop. Do not write judgments anywhere else.
      - `User note: ...`: words the user added to the option they picked.
      - `User said: ...`: what the user wrote instead of, or after, answering.
      - `Answer: (the user declined to answer the question)`.
+     - `Answer: (the user chose to clarify instead of answering)`: the user
+       did not answer and wanted to discuss the question first. A
+       `Selected before asking to clarify: ...` line shows an option the user
+       had already picked for that question; it was not submitted.
      - `Answer: (no option selected)`: the user skipped that question.
      - `Answer: (no answer in the record)`: the record has no answer.
      - `Answer: (the user replied in their own words instead of picking)`.
@@ -94,22 +102,26 @@ is not connected and stop. Do not write judgments anywhere else.
    - `[the user ran ...]`: commands the user ran themselves (their output is
      removed).
 
-   Tool results, text inserted by the client, sub-agent records and the output
-   of the user's own commands are removed. Strings that look like keys or
-   tokens are replaced with `[REDACTED]`. The script reports skipped malformed
-   lines on standard error; mention them to the user if there are any.
+   Tool results, text inserted by the client, sub-agent records, notifications
+   and the output of the user's own commands are removed. Strings that look
+   like keys or tokens are replaced with `[REDACTED]`. The script reports
+   skipped malformed lines on standard error; mention them to the user if
+   there are any.
 
    Read the whole output before extracting. Process one session at a time.
 
 5. **Record the judgments.** Extract them with the rules below and call
    `judgment_add`:
-   - `project_id`: the project from step 2.
+   - `project_id`: the project from step 2. If some judgments belong to a
+     different product, see "Judgments about another product" below.
    - `source.tool`: the name of the work environment, `claude-code`.
    - `source.session_id`: the session file name without `.jsonl` (the ID in
      the header line `# Session ...`).
    - Up to 20 judgments per call; split larger sets into several calls.
-   - `decided_on`: the date of the message where the judgment was made
-     (`YYYY-MM-DD`). For a multiple-choice answer, use the `answered` time of
+   - `decided_on` (`YYYY-MM-DD`): the date of the message where the user
+     decided. When a judgment spans several messages, use the message where
+     the user made the decision; for delegated work, the message where the
+     user handed it over; for a multiple-choice answer, the `answered` time of
      the question, not the `asked` time. Times in the output are UTC: convert
      them to the user's local date before using them.
 
@@ -125,7 +137,19 @@ is not connected and stop. Do not write judgments anywhere else.
      feature, send `feature: {name, summary, create_new: true}`. Resend only
      that judgment. When you cannot tell which candidate is right, ask the
      user.
+   - `needs_feature_choice` with empty `candidates`, or with `reason`
+     `similarity_unavailable`: the server could not compare features. Sending
+     the same request again usually returns the same result, so do not just
+     retry. Look at the `project_context`
+     feature list yourself and resend with the `id` of a fitting feature, or
+     with `create_new: true` when none fits.
    - `invalid`: read `errors`, fix that judgment, and resend only it.
+
+   When several judgments go to the same new feature, send only the first one
+   with the new name (with `create_new: true` if needed), then send the others
+   with the feature `id` returned for it. Never send `create_new: true` again
+   with a reworded name: a different name creates a separate feature (the
+   exact same name reuses the existing one).
 
    Before the next session, call `project_context` again so features created
    for this session are in the list and get reused.
@@ -138,7 +162,9 @@ is not connected and stop. Do not write judgments anywhere else.
    - the judgments recorded with an empty reason (`self` without `reason`,
      `adopted` without `own_reason`), so the user can add the reason in
      Deemento;
-   - the technology names you sent that were not in the project's skill list;
+   - the technology names you sent that were not in the project's skill list
+     (the response does not return them, so keep your own list as you go);
+   - judgments about another product that you did not record (see below);
    - any judgment you could not record, and why.
 
 ## What counts as a judgment
@@ -151,9 +177,16 @@ others, for example to explain in an interview what they decided and why.
   and what the user was struggling with (`situation`, or `request` for
   delegated work).
 - **Skip trivial things**: typo fixes, requests to run a command, permission
-  approvals, greetings, progress checks.
-- **Pick the ones worth telling.** Usually no more than about 8 per session.
-  Zero is fine when nothing qualifies.
+  approvals, greetings, progress checks. A question from the user that did
+  not lead to a decision is not a judgment either.
+- **Pick the ones worth telling**: those the user could talk about for a
+  minute in an interview. A long session can have more of them. Zero is fine
+  when nothing qualifies.
+- **Do not fill gaps.** When an AI message suggests the user said something
+  that is not in the output, do not supply those words. Do not make a
+  judgment of it; if it matters, state the fact in `outcome`.
+- **Explain project-specific terms.** When a name would mean nothing to a
+  listener outside the project, add a short explanation in parentheses.
 
 ### Involvement
 
@@ -168,6 +201,19 @@ Choose exactly one:
   `ai_decisions`; do not split them into separate judgments. A choice the AI
   made without any comment from the user belongs here, not in `self`.
 
+Where the line falls:
+
+- The user asked or pointed something out, but the AI came up with the
+  concrete approach and the user only agreed → `adopted`. If the user stated
+  a criterion or a constraint in their own words → `self`. A defect the user
+  found is the next rule, not this one.
+- The user found a defect and the AI proposed the fix → `self`. The chosen
+  option may be `by_ai: true`.
+- The AI laid out a design without asking, and the user only replied "go
+  ahead" → put it in `ai_decisions` of that task's `delegated` judgment.
+- One piece of delegated work is one judgment, even when the user approved it
+  stage by stage. Keep the `ai_decisions` that shaped the result, up to 10.
+
 For multiple-choice questions (`### AI asked the user`), use the `->` line:
 
 - Picked an option other than the recommended one, answered in their own
@@ -176,13 +222,17 @@ For multiple-choice questions (`### AI asked the user`), use the `->` line:
   `adopted: true`, and add the user's own answer as an option with
   `by_ai: false` when they wrote one.
 - Picked the recommended option and nothing more → `adopted`, with
-  `own_reason` empty.
+  `own_reason` empty. When one question block has several such answers on
+  the same topic, record them as a single `adopted` judgment, not one per
+  question. Keep each non-recommended pick and each answer in the user's own
+  words as its own `self` judgment.
 - Picked the recommended option with a `User note:` → `adopted` when the note
   only says why (put it in `own_reason`); `self` when the note adds a
   constraint or changes the option.
-- Declined the question, replied instead of picking, or asked for more
-  questions → use `User said:` and what the user said next; the question alone
-  is not a judgment.
+- Declined the question, chose to clarify, replied instead of picking, or
+  asked for more questions → use `User said:` and what the user said next;
+  the question alone is not a judgment. An option `Selected before asking to
+clarify` was not submitted; do not treat it as the user's decision.
 - `(no option selected)`, `(no answer in the record)`, a timed-out question,
   and a tool error are not judgments by themselves. An `Answer (as recorded)`
   counts only when you can read the user's choice in it.
@@ -201,25 +251,42 @@ For rejected tool uses (`[the user rejected <tool>]`):
 Use only the keys of the chosen involvement (`judgment_add` rejects the
 others):
 
-- `self`: `situation`, `options` (up to 6, each `label`, `by_ai`,
-  `adopted`), `decision`, `reason`, `hard_part`
+- `self`: `situation`, `options` (each `label`, `by_ai`, `adopted`),
+  `decision`, `reason`, `hard_part`
 - `adopted`: `situation`, `ai_proposal`, `ai_reason`, `own_reason`
 - `delegated`: `request`, `why_needed`, `conditions`, `verified`,
   `ai_decisions`
 
-Also send `title` (a short sentence, up to 80 characters), and `outcome` when
-the record shows what came of it.
+Also send `title`, and `outcome` when the record shows what came of it.
+
+Limits (`judgment_add` rejects values over them):
+
+- `title`: 1 to 80 characters.
+- Every text field in the content, and `outcome`: up to 2000 characters.
+- `options`: up to 6; each `label` 1 to 300 characters.
+- `ai_decisions`: up to 10; each 1 to 300 characters.
+- `evidence`: up to 3; each 1 to 200 characters.
+- A new feature: `name` 1 to 80 characters, `summary` up to 200.
+- Up to 20 judgments per call.
 
 **Never fill in a reason by guessing.** When the record does not state why the
 user decided, leave `reason` (`self`) or `own_reason` (`adopted`) empty. The
 same goes for every optional field: leave it empty unless the record states
 it. The AI's own explanation goes in `ai_reason`, never in `own_reason`.
 
+`verified` is only what the user checked themselves (ran it and looked, found
+something in review, ...). Checks the AI ran (tests, reviews) go in
+`ai_decisions` or `outcome`. Leave `verified` empty when the record shows no
+check by the user.
+
 ### Evidence
 
-Add 1 to 3 short quotes of the user's own words in `evidence` (each up to 200
+Add up to 3 short quotes of the user's own words in `evidence` (each up to 200
 characters): from `### User` blocks, `User said:` and `User note:` lines, or
-the user's answers. Never quote the AI as evidence.
+answers the user wrote in their own words. Never quote the AI. When the user
+only picked an option, leave `evidence` empty: the option text was written by
+the AI. Join line breaks into one line. When a quote contains an email
+address or a secret, mask that part or drop the quote.
 
 ### Features
 
@@ -229,13 +296,25 @@ the user's answers. Never quote the AI as evidence.
   following `feature_rule`.
 - **Never name a feature after the topic of a single judgment.** A feature is
   something the user built; many judgments belong to it.
+- Judgments that belong to no feature (rules for the whole repository, how
+  development is run, when to hand work to the AI) go to a single feature for
+  the way of working. Use it if the list already has one; otherwise create one,
+  named in the user's language for "how we develop". Keep one such feature per
+  project.
+
+### Judgments about another product
+
+When some judgments in a session are about a different product, record them
+in that product's project if `project_list` has it. If not, do not record
+them and do not create a project without asking; list them in the final
+report.
 
 ### Skills
 
 - `skills.domain`: only names from the `project_context` list.
 - `skills.tech`: names from the list. If a technology clearly used in the
   judgment is not in the list, you may still send its name; it is kept as a
-  suggestion. Report such names in step 7.
+  suggestion. Keep track of such names and report them in step 7.
 
 ### Secrets and personal information
 

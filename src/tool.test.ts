@@ -54,7 +54,7 @@ describe("tool definitions", () => {
     },
   );
 
-  it("describes the six rules of judgment_add", () => {
+  it("describes the rules of judgment_add", () => {
     const { description } = byName("judgment_add").definition;
     for (const phrase of [
       "project_context first",
@@ -63,6 +63,12 @@ describe("tool definitions", () => {
       "ask the user",
       "leave the reason empty",
       "secrets",
+      "no candidates, or with reason similarity_unavailable",
+      "sending the same request again usually returns the same result",
+      "send only the first one with the new feature.name",
+      "the feature.id returned for it",
+      "Do not send create_new=true again with a reworded name",
+      "the exact same name reuses the existing one",
     ]) {
       expect(description).toContain(phrase);
     }

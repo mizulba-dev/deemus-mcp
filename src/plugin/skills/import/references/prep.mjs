@@ -2,7 +2,7 @@ import { readFileSync, statSync } from "node:fs";
 import { basename } from "node:path";
 
 const USAGE = "usage: node prep.mjs <session.jsonl> [--max-assistant-chars N]";
-const DEFAULT_MAX_ASSISTANT_CHARS = 1200;
+const DEFAULT_MAX_ASSISTANT_CHARS = 6000;
 const MAX_USER_CHARS = 4000;
 const MAX_OPTION_DESCRIPTION_CHARS = 200;
 const MAX_SHELL_INPUT_CHARS = 200;
@@ -75,8 +75,9 @@ const ANSWER_TERMINATORS = [
 ];
 const DECLINED = "The user doesn't want to proceed with this tool use.";
 const DECLINED_SAID = "the user said:";
-const CLARIFY_BOILERPLATE =
-  /The user wants to clarify these questions\.[\s\S]*?reformulate the questions if appropriate\.?/;
+const CLARIFY_PREFIX = "The user wants to clarify these questions";
+const QUESTIONS_ASKED = "Questions asked:";
+const NO_ANSWER_PROVIDED = "(No answer provided)";
 const TOOL_ERROR = "<tool_use_error>";
 const IDLE_PREFIX = "No response after";
 const MORE_QUESTIONS = "asked for more questions";
@@ -140,6 +141,20 @@ function formatTime(timestamp) {
   return `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
 }
 
+function queuedPromptText(prompt) {
+  if (typeof prompt === "string") return prompt;
+  if (!Array.isArray(prompt)) return null;
+  const texts = [];
+  for (const block of prompt) {
+    if (block?.type === "text" && typeof block.text === "string") {
+      texts.push(block.text);
+    } else if (block?.type === "image") {
+      texts.push("[image]");
+    }
+  }
+  return texts.length ? texts.join("\n") : null;
+}
+
 function contentBlocks(content) {
   if (typeof content === "string") return [{ type: "text", text: content }];
   return Array.isArray(content) ? content : [];
@@ -184,10 +199,29 @@ function isRecommended(label) {
 function saidAfterDecline(text) {
   const saidAt = text.indexOf(DECLINED_SAID);
   if (saidAt < 0) return "";
-  return text
-    .slice(saidAt + DECLINED_SAID.length)
-    .replace(CLARIFY_BOILERPLATE, "")
-    .trim();
+  return text.slice(saidAt + DECLINED_SAID.length).trim();
+}
+
+function readClarification(said, questions) {
+  const listAt = said.indexOf(QUESTIONS_ASKED);
+  const list = listAt < 0 ? "" : said.slice(listAt + QUESTIONS_ASKED.length);
+  const starts = questions.map((q) => list.indexOf(`"${q.text}"`));
+  const partial = questions.map((question, i) => {
+    const start = starts[i];
+    if (start < 0) return null;
+    let end = list.length;
+    for (const other of starts) {
+      if (other > start && other < end) end = other;
+    }
+    const segment = list
+      .slice(start + question.text.length + 2, end)
+      .replace(/\n\s*-\s*$/, "");
+    if (segment.includes(NO_ANSWER_PROVIDED)) return null;
+    const answer = /Answer:\s*([\s\S]*)$/.exec(segment)?.[1].trim();
+    if (!answer) return null;
+    return { answer, picked: pickOptions(question, answer), note: "" };
+  });
+  return { clarify: true, partial };
 }
 
 function labelIndex(question, value) {
@@ -381,7 +415,11 @@ function readAnswers(raw, questions, toolUseResult) {
   const text = raw.trim();
   if (text.startsWith(TOOL_ERROR)) return { toolError: true };
   if (text.startsWith(DECLINED)) {
-    return { declined: true, said: saidAfterDecline(text) };
+    const said = saidAfterDecline(text);
+    if (said.startsWith(CLARIFY_PREFIX)) {
+      return readClarification(said, questions);
+    }
+    return { declined: true, said };
   }
   if (isObject(toolUseResult) && isObject(toolUseResult.answers)) {
     return readStructured(toolUseResult, questions);
@@ -471,11 +509,21 @@ function renderQuestion(part) {
       lines.push("Answer: (no answer in the record)");
     } else if (result.declined) {
       lines.push("Answer: (the user declined to answer the question)");
+    } else if (result.clarify) {
+      const entry = result.partial[i];
+      if (entry) {
+        lines.push(
+          `Selected before asking to clarify: ${truncate(redact(entry.answer), MAX_USER_CHARS)}`,
+        );
+        lines.push(`  -> ${classify(question, entry)}`);
+      }
     } else if (result.answers) {
       renderAnswer(lines, question, result.answers[i]);
     }
   });
-  if (result?.toolError) {
+  if (result?.clarify) {
+    lines.push("Answer: (the user chose to clarify instead of answering)");
+  } else if (result?.toolError) {
     lines.push(
       "Answer: (the question failed with a tool error; there is no answer)",
     );
@@ -564,6 +612,26 @@ function convert(lines, sessionId, maxAssistantChars) {
     });
   };
 
+  const handleQueuedPrompt = (attachment, timestamp) => {
+    if (!isObject(attachment) || attachment.type !== "queued_command") return;
+    if (attachment.commandMode !== "prompt") return;
+    if (attachment.isMeta === true) return;
+    if (attachment.origin != null && attachment.origin.kind !== "human") return;
+    const prompt = queuedPromptText(attachment.prompt);
+    if (prompt === null) return;
+    const text = stripDroppedBlocks(prompt);
+    if (!text) return;
+    const time =
+      timestamp ||
+      (typeof attachment.timestamp === "string" ? attachment.timestamp : "");
+    flushTools();
+    userMessages += 1;
+    parts.push({
+      kind: "text",
+      text: `### User (${formatTime(time)}, sent while the AI was working)\n${truncate(redact(text), MAX_USER_CHARS)}`,
+    });
+  };
+
   const handleRejection = (block) => {
     const name = toolNames.get(block.tool_use_id);
     if (name === undefined) return;
@@ -606,7 +674,7 @@ function convert(lines, sessionId, maxAssistantChars) {
     }
     if (!entry || typeof entry !== "object") continue;
     if (entry.isSidechain === true) continue;
-    if (entry.type !== "user" && entry.type !== "assistant") continue;
+    if (!["user", "assistant", "attachment"].includes(entry.type)) continue;
 
     const timestamp =
       typeof entry.timestamp === "string" ? entry.timestamp : "";
@@ -616,6 +684,11 @@ function convert(lines, sessionId, maxAssistantChars) {
     }
     if (!directory && typeof entry.cwd === "string" && entry.cwd) {
       directory = basename(entry.cwd);
+    }
+
+    if (entry.type === "attachment") {
+      handleQueuedPrompt(entry.attachment, timestamp);
+      continue;
     }
 
     const blocks = contentBlocks(entry.message?.content);
@@ -672,8 +745,13 @@ function convert(lines, sessionId, maxAssistantChars) {
   }
   flushTools();
 
-  const answered = parts
-    .filter((part) => part.kind === "question" && part.result?.answers)
+  const questionParts = parts.filter((part) => part.kind === "question");
+  const asked = questionParts.reduce(
+    (sum, part) => sum + part.questions.length,
+    0,
+  );
+  const answered = questionParts
+    .filter((part) => part.result?.answers && !part.result.idle)
     .reduce(
       (sum, part) =>
         sum +
@@ -688,7 +766,7 @@ function convert(lines, sessionId, maxAssistantChars) {
     ...(directory ? [`Directory: ${redact(directory)}`] : []),
     `Period: ${period}`,
     `User messages: ${userMessages}`,
-    `Answered questions: ${answered}`,
+    `Questions: ${asked} (answered ${answered}, declined or unanswered ${asked - answered})`,
   ].join("\n");
   const body = parts.map((part) =>
     part.kind === "question" ? renderQuestion(part) : part.text,

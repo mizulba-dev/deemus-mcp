@@ -20,6 +20,8 @@ export const judgmentAddTool: ToolHandler = {
       "4) When you cannot decide between candidates, ask the user. " +
       "5) When the record does not state the reason, leave the reason empty; never fill it in by guessing. " +
       "6) Do not write secrets (keys, tokens, passwords) or personal information. " +
+      "7) If needs_feature_choice comes with no candidates, or with reason similarity_unavailable, the server could not compare features; sending the same request again usually returns the same result, so do not just retry. Pick a fitting feature from the project_context list yourself and resend with its feature.id, or resend with feature.create_new=true when none fits. " +
+      "8) To put several judgments into the same new feature, send only the first one with the new feature.name (with create_new=true if needed), then send the others with the feature.id returned for it. Do not send create_new=true again with a reworded name; a different name creates a separate feature (the exact same name reuses the existing one). " +
       "Results are independent per judgment: saved, needs_feature_choice or invalid (see errors). Sending the same session_id and title again does not create a duplicate.",
     inputSchema: {
       type: "object",
