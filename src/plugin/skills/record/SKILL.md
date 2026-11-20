@@ -85,7 +85,9 @@ is not connected and stop. Do not write judgments anywhere else.
    `own_reason`) so the user can add the reason in Deemento. Also mention
    new workstreams, technology names that were not in the project's skill
    list, judgments about another product that you did not record, and any
-   judgment you could not record, and why.
+   judgment you could not record, and why. When the `judgment_add` response
+   has `work_principles_hint`, add one line saying Deemento can sum up the
+   user's work principles.
 
 ## What counts as a judgment
 

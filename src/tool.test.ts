@@ -34,15 +34,19 @@ const annotationCases = [
   { name: "project_create", readOnly: false, idempotent: true },
   { name: "project_context", readOnly: true, idempotent: true },
   { name: "judgment_add", readOnly: false, idempotent: true },
+  { name: "work_principles_context", readOnly: true, idempotent: true },
+  { name: "work_principles_propose", readOnly: false, idempotent: false },
 ];
 
 describe("tool definitions", () => {
-  it("registers exactly the four tools in order", () => {
+  it("registers exactly the six tools in order", () => {
     expect(tools.map((t) => t.definition.name)).toEqual([
       "project_list",
       "project_create",
       "project_context",
       "judgment_add",
+      "work_principles_context",
+      "work_principles_propose",
     ]);
   });
 
@@ -79,6 +83,28 @@ describe("tool definitions", () => {
       "one judgment for the whole task, with the AI's choices in ai_decisions",
       "never the AI's",
       "send only judgments made since the last call",
+      "work_principles_hint",
+    ]) {
+      expect(description).toContain(phrase);
+    }
+  });
+
+  it("describes the rules of work_principles_propose", () => {
+    const { description } = byName("work_principles_propose").definition;
+    for (const phrase of [
+      "work_principles_context first",
+      "0 to 5 candidates",
+      "candidates empty",
+      "2 to 10 judgment ids",
+      "what to prioritize when choosing",
+      "what to check before choosing",
+      "at least 2 judgments from different situations",
+      "never rephrase a single judgment",
+      "general lesson",
+      "already has",
+      "duplicate",
+      "invalid",
+      "secrets",
     ]) {
       expect(description).toContain(phrase);
     }
@@ -260,6 +286,63 @@ describe("tool to API mapping", () => {
       code: "invalid_input",
     });
     expect(api.requests).toHaveLength(0);
+  });
+
+  it("work_principles_context -> GET /api/v1/mcp/work-principles/context", async () => {
+    const client = createApiClient(api.url, "oat_t");
+
+    const result = await byName("work_principles_context").handler({}, client);
+
+    expect(result.isError).toBeFalsy();
+    expect(api.requests).toHaveLength(1);
+    expect(api.requests[0].method).toBe("GET");
+    expect(api.requests[0].path).toBe("/api/v1/mcp/work-principles/context");
+  });
+
+  it("work_principles_propose -> POST /api/v1/mcp/work-principles with candidates only", async () => {
+    const response = { results: [{ status: "saved", id: 4 }] };
+    api.respondWith(() => ({ body: response }));
+    const client = createApiClient(api.url, "oat_t");
+    const candidates = [
+      {
+        title: "Check the failure path before choosing a library",
+        body: "",
+        evidence_ids: [1, 2],
+      },
+    ];
+
+    const result = await byName("work_principles_propose").handler(
+      { candidates, ignored: "x" },
+      client,
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual(response);
+    expect(api.requests).toHaveLength(1);
+    expect(api.requests[0].method).toBe("POST");
+    expect(api.requests[0].path).toBe("/api/v1/mcp/work-principles");
+    expect(api.requests[0].body).toEqual({ candidates });
+  });
+
+  it("requires candidates for work_principles_propose", () => {
+    const def = byName("work_principles_propose").definition;
+    expect(validateArgs(def, {})).toBe("candidates is required");
+    expect(validateArgs(def, { candidates: [] })).toBeNull();
+  });
+
+  it("work_principles_propose sends an empty candidates array as is", async () => {
+    api.respondWith(() => ({ body: { results: [] } }));
+    const client = createApiClient(api.url, "oat_t");
+
+    const result = await byName("work_principles_propose").handler(
+      { candidates: [] },
+      client,
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual({ results: [] });
+    expect(api.requests[0].path).toBe("/api/v1/mcp/work-principles");
+    expect(api.requests[0].body).toEqual({ candidates: [] });
   });
 
   it("returns isError with the API error code and message", async () => {

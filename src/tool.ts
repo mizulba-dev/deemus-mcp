@@ -11,11 +11,17 @@ import {
   projectContextTool,
   projectCreateTool,
   projectListTool,
+  workPrinciplesContextTool,
+  workPrinciplesProposeTool,
 } from "./handlers/index.js";
 import { InvalidInputError, failure } from "./handlers/common.js";
 import type { ToolDefinition, ToolHandler } from "./schemas/tool.js";
 
-const READ_ONLY_TOOLS = new Set(["project_list", "project_context"]);
+const READ_ONLY_TOOLS = new Set([
+  "project_list",
+  "project_context",
+  "work_principles_context",
+]);
 const DESTRUCTIVE_TOOLS = new Set<string>();
 const IDEMPOTENT_TOOLS = new Set(["project_create", "judgment_add"]);
 
@@ -24,6 +30,8 @@ const TOOL_TITLES: Record<string, string> = {
   project_create: "Create a project",
   project_context: "Get project context",
   judgment_add: "Add judgments",
+  work_principles_context: "Get work principles context",
+  work_principles_propose: "Propose work principles",
 };
 
 function withToolAnnotations(tool: ToolHandler): ToolHandler {
@@ -53,6 +61,8 @@ export function getRegisteredTools(): ToolHandler[] {
     projectCreateTool,
     projectContextTool,
     judgmentAddTool,
+    workPrinciplesContextTool,
+    workPrinciplesProposeTool,
   ].map(withToolAnnotations);
 }
 

@@ -246,6 +246,8 @@ describe("HTTP MCP server", () => {
       "project_create",
       "project_context",
       "judgment_add",
+      "work_principles_context",
+      "work_principles_propose",
     ]);
 
     const result = await client.callTool({

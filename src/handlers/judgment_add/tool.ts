@@ -30,6 +30,7 @@ export const judgmentAddTool: ToolHandler = {
       "delegated when the user had the AI build something on its own (one judgment for the whole task, with the AI's choices in ai_decisions). " +
       "Quote only the user's own words in evidence, never the AI's. " +
       "When recording again in the same conversation, send only judgments made since the last call; a reworded title is recorded as a separate judgment. " +
+      "When the response has work_principles_hint, tell the user in one line that Deemento can sum up their work principles. " +
       "Results are independent per judgment: saved, needs_workstream_choice or invalid (see errors). Sending the same session_id and title again does not create a duplicate.",
     inputSchema: {
       type: "object",
