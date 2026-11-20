@@ -22,6 +22,14 @@ export const judgmentAddTool: ToolHandler = {
       "6) Do not write secrets (keys, tokens, passwords) or personal information. " +
       "7) If needs_workstream_choice comes with no candidates, or with reason similarity_unavailable, the server could not compare workstreams; sending the same request again usually returns the same result, so do not just retry. Pick a fitting workstream from the project_context list yourself and resend with its workstream.id, or resend with workstream.create_new=true when none fits. " +
       "8) To put several judgments into the same new workstream, send only the first one with the new workstream.name (with create_new=true if needed), then send the others with the workstream.id returned for it. Do not send create_new=true again with a reworded name; a different name creates a separate workstream (the exact same name reuses the existing one). " +
+      "What to record: " +
+      "a judgment is one decision in a specific situation that the user could explain to others in a minute; never a general lesson. " +
+      "Skip trivial things such as typo fixes, requests to run a command, permission approvals and progress checks. " +
+      "Choose involvement by who decided: self when the user rejected the AI's proposal, chose between options, set a constraint or caught a mistake; " +
+      "adopted when the user accepted the AI's approach as it was; " +
+      "delegated when the user had the AI build something on its own (one judgment for the whole task, with the AI's choices in ai_decisions). " +
+      "Quote only the user's own words in evidence, never the AI's. " +
+      "When recording again in the same conversation, send only judgments made since the last call; a reworded title is recorded as a separate judgment. " +
       "Results are independent per judgment: saved, needs_workstream_choice or invalid (see errors). Sending the same session_id and title again does not create a duplicate.",
     inputSchema: {
       type: "object",

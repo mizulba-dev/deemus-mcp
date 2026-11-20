@@ -128,7 +128,8 @@ is not connected and stop. Do not write judgments anywhere else.
    Sending the same `session_id` and `title` again does not create a
    duplicate, so a retry after an error is safe. A judgment whose title was
    worded differently is recorded again, so do not re-import a session the
-   user has already imported unless they ask.
+   user has already imported, or one already recorded with the `record` skill
+   (including recording started by the user's own rules), unless they ask.
 
 6. **Handle the results.** Results come back in the order you sent them.
    - `saved`: done. `duplicate: true` means it was already recorded.
@@ -315,7 +316,7 @@ report.
 - `skills.domain`: only names from the `project_context` list.
 - `skills.tech`: names from the list. If a technology clearly used in the
   judgment is not in the list, you may still send its name; it is kept as a
-  suggestion. Keep track of such names and report them in step 7.
+  suggestion. Keep track of such names and report them to the user at the end.
 
 ### Secrets and personal information
 

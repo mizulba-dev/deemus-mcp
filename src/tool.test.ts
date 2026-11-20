@@ -72,6 +72,13 @@ describe("tool definitions", () => {
       "the workstream.id returned for it",
       "Do not send create_new=true again with a reworded name",
       "the exact same name reuses the existing one",
+      "one decision in a specific situation",
+      "Skip trivial things",
+      "self when the user rejected the AI's proposal",
+      "adopted when the user accepted the AI's approach as it was",
+      "one judgment for the whole task, with the AI's choices in ai_decisions",
+      "never the AI's",
+      "send only judgments made since the last call",
     ]) {
       expect(description).toContain(phrase);
     }
