@@ -30,6 +30,7 @@ export const judgmentAddTool: ToolHandler = {
       "delegated when the user had the AI build something on its own (one judgment for the whole task, with the AI's choices in ai_decisions). " +
       "Quote only the user's own words in evidence, never the AI's. " +
       "When recording again in the same conversation, send only judgments made since the last call; a reworded title is recorded as a separate judgment. " +
+      "When the user reverses an earlier judgment, find it with judgment_search and put its id in supersedes of the new judgment; the saved result lists superseded_ids. " +
       "When the response has work_principles_hint, tell the user in one line that Deemento can sum up their work principles. " +
       "Results are independent per judgment: saved, needs_workstream_choice or invalid (see errors). Sending the same session_id and title again does not create a duplicate.",
     inputSchema: {
@@ -129,6 +130,13 @@ export const judgmentAddTool: ToolHandler = {
                   tech: { type: "array", items: { type: "string" } },
                   domain: { type: "array", items: { type: "string" } },
                 },
+              },
+              supersedes: {
+                type: "array",
+                maxItems: 10,
+                items: { type: "integer" },
+                description:
+                  "Ids of earlier judgments of the same project that this judgment replaces because the user reversed them. Find them with judgment_search. Optional.",
               },
               workstream: {
                 type: "object",

@@ -30,7 +30,7 @@ To record past Claude Code sessions, ask the AI to import them; the `import` ski
 
 Ask the AI to "sum up my work principles in Deemento". The `work-principles` skill reads your recorded judgments and proposes the criteria that run through judgments made in different situations, each backed by those judgments. Adopt the ones you agree with in Deemento.
 
-### Record automatically in Claude Code and Codex
+### Record and look back automatically in Claude Code and Codex
 
 Paste this into your global rules (`~/.claude/CLAUDE.md` for Claude Code, `~/.codex/AGENTS.md` for Codex):
 
@@ -38,6 +38,8 @@ Paste this into your global rules (`~/.claude/CLAUDE.md` for Claude Code, `~/.co
 ## Deemento
 
 When you finish a piece of work (a feature, a fix, or something the user decided), use the Deemento record skill to record the judgments the user made since the last recording, without asking first. Do nothing when there is no judgment worth recording.
+
+Before proposing a design, an implementation approach, or a refactoring direction, use Deemento's judgment_search to check the past judgments and rejected options of this repository's project, and do not propose anything that contradicts them. If the project cannot be determined, do not search.
 ```
 
 Records are saved privately. Nothing is shown to others until you choose to publish it in Deemento.

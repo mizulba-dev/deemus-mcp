@@ -8,6 +8,8 @@ import {
 import { createApiClient } from "./services/api/index.js";
 import {
   judgmentAddTool,
+  judgmentSearchTool,
+  judgmentUpdateTool,
   projectContextTool,
   projectCreateTool,
   projectListTool,
@@ -20,16 +22,23 @@ import type { ToolDefinition, ToolHandler } from "./schemas/tool.js";
 const READ_ONLY_TOOLS = new Set([
   "project_list",
   "project_context",
+  "judgment_search",
   "work_principles_context",
 ]);
 const DESTRUCTIVE_TOOLS = new Set<string>();
-const IDEMPOTENT_TOOLS = new Set(["project_create", "judgment_add"]);
+const IDEMPOTENT_TOOLS = new Set([
+  "project_create",
+  "judgment_add",
+  "judgment_update",
+]);
 
 const TOOL_TITLES: Record<string, string> = {
   project_list: "List projects",
   project_create: "Create a project",
   project_context: "Get project context",
   judgment_add: "Add judgments",
+  judgment_search: "Search judgments",
+  judgment_update: "Update a judgment",
   work_principles_context: "Get work principles context",
   work_principles_propose: "Propose work principles",
 };
@@ -61,6 +70,8 @@ export function getRegisteredTools(): ToolHandler[] {
     projectCreateTool,
     projectContextTool,
     judgmentAddTool,
+    judgmentSearchTool,
+    judgmentUpdateTool,
     workPrinciplesContextTool,
     workPrinciplesProposeTool,
   ].map(withToolAnnotations);
@@ -77,6 +88,8 @@ function matchesType(type: unknown, value: unknown): boolean {
       return typeof value === "number";
     case "boolean":
       return typeof value === "boolean";
+    case "null":
+      return value === null;
     case "array":
       return Array.isArray(value);
     case "object":

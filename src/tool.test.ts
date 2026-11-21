@@ -34,17 +34,21 @@ const annotationCases = [
   { name: "project_create", readOnly: false, idempotent: true },
   { name: "project_context", readOnly: true, idempotent: true },
   { name: "judgment_add", readOnly: false, idempotent: true },
+  { name: "judgment_search", readOnly: true, idempotent: true },
+  { name: "judgment_update", readOnly: false, idempotent: true },
   { name: "work_principles_context", readOnly: true, idempotent: true },
   { name: "work_principles_propose", readOnly: false, idempotent: false },
 ];
 
 describe("tool definitions", () => {
-  it("registers exactly the six tools in order", () => {
+  it("registers exactly the eight tools in order", () => {
     expect(tools.map((t) => t.definition.name)).toEqual([
       "project_list",
       "project_create",
       "project_context",
       "judgment_add",
+      "judgment_search",
+      "judgment_update",
       "work_principles_context",
       "work_principles_propose",
     ]);
@@ -110,6 +114,46 @@ describe("tool definitions", () => {
     }
   });
 
+  it("describes judgment_search and judgment_update", () => {
+    const search = byName("judgment_search").definition.description;
+    for (const phrase of [
+      "before you propose a design",
+      "repo_names",
+      "do not search",
+      "do not ask the user",
+      "do not create a project",
+      "Only when the user asked you to search",
+      "include_superseded",
+    ]) {
+      expect(search).toContain(phrase);
+    }
+    const update = byName("judgment_update").definition.description;
+    for (const phrase of [
+      "never fill outcome or reason in by guessing",
+      "own_reason",
+      "delegated",
+      "send null to undo it",
+    ]) {
+      expect(update).toContain(phrase);
+    }
+    expect(byName("judgment_add").definition.description).toContain(
+      "judgment_search",
+    );
+  });
+
+  it("exposes supersedes on each judgment of judgment_add", () => {
+    const schema = byName("judgment_add").definition.inputSchema as {
+      properties: {
+        judgments: {
+          items: { properties: { supersedes: { maxItems: number } } };
+        };
+      };
+    };
+    expect(
+      schema.properties.judgments.items.properties.supersedes.maxItems,
+    ).toBe(10);
+  });
+
   it("does not expose a public mark on judgment_add", () => {
     expect(JSON.stringify(byName("judgment_add").definition)).not.toContain(
       "public",
@@ -158,6 +202,12 @@ describe("validateArgs", () => {
       "summary",
       "create_new",
     ]);
+  });
+
+  it("does not mention public in any tool definition", () => {
+    for (const tool of tools) {
+      expect(JSON.stringify(tool.definition)).not.toMatch(/public/i);
+    }
   });
 
   it("does not mention the old name feature in any tool definition", () => {
@@ -276,6 +326,8 @@ describe("tool to API mapping", () => {
     ["project_context", { project_id: 0 }],
     ["judgment_add", { ...judgmentsBody }],
     ["judgment_add", { project_id: "1/../2", ...judgmentsBody }],
+    ["judgment_search", { query: "a" }],
+    ["judgment_update", { judgment_id: "../4", outcome: "x" }],
   ])("%s rejects a missing or malformed project_id %j", async (name, args) => {
     const client = createApiClient(api.url, "oat_t");
 
@@ -286,6 +338,79 @@ describe("tool to API mapping", () => {
       code: "invalid_input",
     });
     expect(api.requests).toHaveLength(0);
+  });
+
+  it("judgment_search -> POST /api/v1/mcp/projects/:id/judgments/search with the search fields only", async () => {
+    const response = { mode: "keyword", results: [] };
+    api.respondWith(() => ({ body: response }));
+    const client = createApiClient(api.url, "oat_t");
+
+    const result = await byName("judgment_search").handler(
+      {
+        project_id: 12,
+        query: "retry",
+        include_superseded: true,
+        limit: 5,
+        ignored: "x",
+      },
+      client,
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual(response);
+    expect(api.requests[0].method).toBe("POST");
+    expect(api.requests[0].path).toBe(
+      "/api/v1/mcp/projects/12/judgments/search",
+    );
+    expect(api.requests[0].body).toEqual({
+      query: "retry",
+      include_superseded: true,
+      limit: 5,
+    });
+  });
+
+  it("judgment_update -> PATCH /api/v1/mcp/judgments/:id and sends null as is", async () => {
+    api.respondWith(() => ({ body: { judgment: { id: 4 } } }));
+    const client = createApiClient(api.url, "oat_t");
+
+    const result = await byName("judgment_update").handler(
+      { judgment_id: 4, superseded_by_id: null, ignored: "x" },
+      client,
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(api.requests[0].method).toBe("PATCH");
+    expect(api.requests[0].path).toBe("/api/v1/mcp/judgments/4");
+    expect(api.requests[0].body).toEqual({ superseded_by_id: null });
+  });
+
+  it("judgment_update sends only the given fields", async () => {
+    api.respondWith(() => ({ body: { judgment: { id: 4 } } }));
+    const client = createApiClient(api.url, "oat_t");
+
+    await byName("judgment_update").handler(
+      { judgment_id: 4, outcome: "Shipped.", reason: "Fewer failures." },
+      client,
+    );
+
+    expect(api.requests[0].body).toEqual({
+      outcome: "Shipped.",
+      reason: "Fewer failures.",
+    });
+  });
+
+  it("validates the arguments of judgment_search and judgment_update", () => {
+    const search = byName("judgment_search").definition;
+    expect(validateArgs(search, { project_id: 1 })).toBe("query is required");
+    expect(validateArgs(search, { project_id: 1, query: "a" })).toBeNull();
+    const update = byName("judgment_update").definition;
+    expect(validateArgs(update, {})).toBe("judgment_id is required");
+    expect(
+      validateArgs(update, { judgment_id: 1, superseded_by_id: null }),
+    ).toBeNull();
+    expect(
+      validateArgs(update, { judgment_id: 1, superseded_by_id: "2" }),
+    ).toBe("superseded_by_id must be of type integer,null");
   });
 
   it("work_principles_context -> GET /api/v1/mcp/work-principles/context", async () => {

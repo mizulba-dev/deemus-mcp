@@ -6,14 +6,16 @@ The server speaks Streamable HTTP (stateless, `POST /mcp`) and forwards the clie
 
 ## Tools
 
-| Tool                      | Purpose                                                                            |
-| ------------------------- | ---------------------------------------------------------------------------------- |
-| `project_list`            | List your projects. Match `repo_names` with the repository you work in.            |
-| `project_create`          | Create a project when none matches (idempotent by name).                           |
-| `project_context`         | Get a project's workstreams, your skill names and the workstream granularity rule. |
-| `judgment_add`            | Record up to 20 judgments for a project.                                           |
-| `work_principles_context` | Get your recent judgments and existing work principles.                            |
-| `work_principles_propose` | Send up to 5 work principle candidates, each backed by 2 to 10 judgments.          |
+| Tool                      | Purpose                                                                                      |
+| ------------------------- | -------------------------------------------------------------------------------------------- |
+| `project_list`            | List your projects. Match `repo_names` with the repository you work in.                      |
+| `project_create`          | Create a project when none matches (idempotent by name).                                     |
+| `project_context`         | Get a project's workstreams, your skill names and the workstream granularity rule.           |
+| `judgment_add`            | Record up to 20 judgments for a project.                                                     |
+| `judgment_search`         | Search the judgments of a project, including the options you rejected.                       |
+| `judgment_update`         | Add an outcome or your reason to a recorded judgment, or link the judgment that replaced it. |
+| `work_principles_context` | Get your recent judgments and existing work principles.                                      |
+| `work_principles_propose` | Send up to 5 work principle candidates, each backed by 2 to 10 judgments.                    |
 
 Call `project_context` before `judgment_add`, and pick each judgment's workstream from the returned list. If `judgment_add` returns `needs_workstream_choice`, choose from the candidates and resend only that judgment.
 

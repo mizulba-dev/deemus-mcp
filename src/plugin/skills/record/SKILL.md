@@ -15,7 +15,7 @@ language too.
 ## Tools
 
 This skill uses the Deemento MCP tools whose names end in `project_list`,
-`project_create`, `project_context` and `judgment_add`. The prefix in front of
+`project_create`, `project_context`, `judgment_search` and `judgment_add`. The prefix in front of
 the name depends on how the server was connected; match on the end of the name
 only.
 
@@ -55,6 +55,10 @@ is not connected and stop. Do not write judgments anywhere else.
    - `source.session_id`: the ID of the current session when your environment
      exposes one; otherwise leave it out.
    - Up to 20 judgments per call; split larger sets into several calls.
+   - `supersedes`: when the user reversed an earlier judgment, find it with
+     `judgment_search` (`include_superseded` left off) and put its id in
+     `supersedes` of the new judgment (up to 10 ids, same project). Leave it out
+     when you cannot find it.
    - `decided_on` (`YYYY-MM-DD`): the user's local date of the message where
      the user decided (for delegated work, where the user handed it over).
 
