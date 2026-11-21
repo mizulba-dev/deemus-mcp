@@ -4,14 +4,17 @@
   "version": "1.0.0",
   "description": "Deemus plugin marketplace — keep the judgments you make while building with AI.",
   "owner": {
-    "name": "mizulba"
+    "name": "mizulba",
+    "email": "info@deemus.app",
+    "url": "https://deemus.app"
   },
   "plugins": [
     {
       "name": "deemus",
       "displayName": "Deemus",
       "source": "./src/plugin",
-      "description": "Deemus — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated."
+      "description": "Deemus — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated.",
+      "homepage": "https://deemus.app"
     }
   ]
 }

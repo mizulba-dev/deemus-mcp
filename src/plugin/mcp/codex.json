@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "deemus": {
+      "type": "http",
+      "url": "https://mcp.deemus.app/mcp",
+      "_meta": {
+        "ideToolIconPath": "./assets/icon.svg",
+        "ideToolIconRendersAsTemplate": false
+      }
+    }
+  }
+}

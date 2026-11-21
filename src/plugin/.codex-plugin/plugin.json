@@ -2,13 +2,16 @@
   "name": "deemus",
   "displayName": "Deemus",
   "description": "Deemus — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "interface": {
     "displayName": "Deemus",
     "developerName": "mizulba",
     "shortDescription": "Keep the judgments you make while building with AI, and show the ones you choose.",
     "longDescription": "Deemus — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated.",
     "composerIcon": "./assets/icon.svg",
-    "logo": "./assets/icon.png"
-  }
+    "logo": "./assets/icon.png",
+    "websiteURL": "https://deemus.app",
+    "privacyPolicyURL": "https://deemus.app/privacy"
+  },
+  "mcpServers": "./mcp/codex.json"
 }

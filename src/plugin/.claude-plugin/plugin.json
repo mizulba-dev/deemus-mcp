@@ -2,10 +2,12 @@
   "name": "deemus",
   "displayName": "Deemus",
   "description": "Deemus — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "mizulba"
   },
   "repository": "https://github.com/mizulba-dev/deemus-mcp",
-  "license": "MIT"
+  "license": "MIT",
+  "mcpServers": "./mcp/claude.json",
+  "homepage": "https://deemus.app"
 }

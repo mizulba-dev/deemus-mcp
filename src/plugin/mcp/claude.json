@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "deemus": {
+      "type": "http",
+      "url": "https://mcp.deemus.app/mcp"
+    }
+  }
+}

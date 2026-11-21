@@ -83,9 +83,19 @@ describe("plugin manifests", () => {
     }
   });
 
-  it("does not declare mcpServers in either plugin.json", () => {
+  it("connects both plugins to the remote server only, with nothing run on connect", () => {
     for (const file of [claudeManifest, codexManifest]) {
-      expect(readJson(file), file).not.toHaveProperty("mcpServers");
+      const ref = readJson(file).mcpServers;
+      expect(typeof ref, file).toBe("string");
+      const servers = readJson(join("src/plugin", ref as string))
+        .mcpServers as Record<string, Record<string, unknown>>;
+
+      expect(Object.keys(servers), file).toEqual(["deemus"]);
+      const { _meta, ...server } = servers.deemus;
+      expect(server, file).toEqual({
+        type: "http",
+        url: "https://mcp.deemus.app/mcp",
+      });
     }
   });
 
