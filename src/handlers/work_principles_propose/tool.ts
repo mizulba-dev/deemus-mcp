@@ -5,7 +5,7 @@ export const workPrinciplesProposeTool: ToolHandler = {
   definition: {
     name: "work_principles_propose",
     description:
-      "Send candidates for the user's work principles: criteria that run through judgments made in different situations. The user adopts them in Deemento; nothing is shown to others by this call. " +
+      "Send candidates for the user's work principles: criteria that run through judgments made in different situations. The user adopts them in Deemus; nothing is shown to others by this call. " +
       "Rules: " +
       "1) Call work_principles_context first and use only judgment ids it returned. " +
       "2) Send 0 to 5 candidates. Each needs a title (1-80 characters), a body (up to 600 characters, may be empty) and evidence_ids (2 to 10 judgment ids). " +

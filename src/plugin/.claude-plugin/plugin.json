@@ -1,11 +1,11 @@
 {
-  "name": "deemento",
-  "displayName": "Deemento",
-  "description": "Deemento — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated.",
+  "name": "deemus",
+  "displayName": "Deemus",
+  "description": "Deemus — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated.",
   "version": "0.1.0",
   "author": {
     "name": "mizulba"
   },
-  "repository": "https://github.com/mizulba-dev/deemento-mcp",
+  "repository": "https://github.com/mizulba-dev/deemus-mcp",
   "license": "MIT"
 }

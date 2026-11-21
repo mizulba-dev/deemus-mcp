@@ -22,7 +22,7 @@ export interface HttpMcpServerOptions extends MCPServerOptions {
   port?: number;
 }
 
-const OAUTH_SCOPES = ["deemento.read", "deemento.write"] as const;
+const OAUTH_SCOPES = ["deemus.read", "deemus.write"] as const;
 const MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024;
 
 export async function startHttpMcpServer(
@@ -73,7 +73,7 @@ export async function startHttpMcpServer(
     ) {
       sendJson(res, 200, {
         resource: getResourceUrl(publicOrigin, endpoint),
-        resource_name: "deemento",
+        resource_name: "Deemus",
         authorization_servers: [apiOrigin],
         scopes_supported: OAUTH_SCOPES,
         bearer_methods_supported: ["header"],
@@ -415,7 +415,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
           : String(address);
 
       console.error(
-        `deemento MCP Streamable HTTP server listening on ${listeningOn}`,
+        `deemus MCP Streamable HTTP server listening on ${listeningOn}`,
       );
       console.error("MCP endpoint: /mcp");
     })

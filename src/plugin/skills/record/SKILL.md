@@ -1,12 +1,12 @@
 ---
 name: record
-description: Record the judgments the user made in the current conversation into Deemento. Use when the user asks to record, save, or log their judgments or decisions to Deemento, or when the user's own rules say to record judgments after a piece of work.
+description: Record the judgments the user made in the current conversation into Deemus. Use when the user asks to record, save, or log their judgments or decisions to Deemus, or when the user's own rules say to record judgments after a piece of work.
 ---
 
-# Deemento Record
+# Deemus Record
 
 Look back over the current conversation, pick out the judgments the user made
-while building with AI, and record them in Deemento.
+while building with AI, and record them in Deemus.
 
 Reply to the user in the user's language, and write every recorded judgment
 (titles, situations, decisions, workstream names and summaries) in the user's
@@ -14,12 +14,12 @@ language too.
 
 ## Tools
 
-This skill uses the Deemento MCP tools whose names end in `project_list`,
+This skill uses the Deemus MCP tools whose names end in `project_list`,
 `project_create`, `project_context`, `judgment_search` and `judgment_add`. The prefix in front of
 the name depends on how the server was connected; match on the end of the name
 only.
 
-If none of these tools is available, tell the user that the Deemento MCP server
+If none of these tools is available, tell the user that the Deemus MCP server
 is not connected and stop. Do not write judgments anywhere else.
 
 ## Steps
@@ -86,11 +86,11 @@ is not connected and stop. Do not write judgments anywhere else.
 6. **Report to the user** in one or two lines: how many judgments were
    recorded, by involvement (`self`, `adopted`, `delegated`), and the ones
    recorded with an empty reason (`self` without `reason`, `adopted` without
-   `own_reason`) so the user can add the reason in Deemento. Also mention
+   `own_reason`) so the user can add the reason in Deemus. Also mention
    new workstreams, technology names that were not in the project's skill
    list, judgments about another product that you did not record, and any
    judgment you could not record, and why. When the `judgment_add` response
-   has `work_principles_hint`, add one line saying Deemento can sum up the
+   has `work_principles_hint`, add one line saying Deemus can sum up the
    user's work principles.
 
 ## What counts as a judgment

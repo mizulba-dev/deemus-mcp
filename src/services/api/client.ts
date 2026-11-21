@@ -87,7 +87,7 @@ export async function apiRequest<T = unknown>(
 
   if (!accessToken) {
     throw new Error(
-      "deemento authentication is not configured for this MCP request.",
+      "Deemus authentication is not configured for this MCP request.",
     );
   }
 

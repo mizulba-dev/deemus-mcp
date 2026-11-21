@@ -1,12 +1,12 @@
 ---
 name: work-principles
-description: Sum up the user's work principles in Deemento from their recorded judgments. Use when the user asks to sum up, review, or organize their work principles ("仕事の考え方をまとめて", "見直して", "整理して").
+description: Sum up the user's work principles in Deemus from their recorded judgments. Use when the user asks to sum up, review, or organize their work principles ("仕事の考え方をまとめて", "見直して", "整理して").
 ---
 
-# Deemento Work Principles
+# Deemus Work Principles
 
 Find the criteria that run through the judgments the user recorded in different
-situations, and send them to Deemento as candidates. The user decides which to
+situations, and send them to Deemus as candidates. The user decides which to
 adopt.
 
 Reply to the user in the user's language, and write titles and bodies in the
@@ -14,11 +14,11 @@ user's language too.
 
 ## Tools
 
-This skill uses the Deemento MCP tools whose names end in
+This skill uses the Deemus MCP tools whose names end in
 `work_principles_context` and `work_principles_propose`. The prefix depends on
 how the server was connected; match on the end of the name only.
 
-If neither tool is available, tell the user that the Deemento MCP server is not
+If neither tool is available, tell the user that the Deemus MCP server is not
 connected and stop.
 
 ## Steps
@@ -39,7 +39,7 @@ connected and stop.
 6. Handle the results, which come back in input order. `saved`: done.
    `duplicate`: already exists, leave it. `invalid`: read `errors`, fix that
    candidate, and resend only it.
-7. Tell the user: "候補を N 件届けました。Deemento の『仕事の考え方』で採用してください" (in the user's language), with N as the number saved.
+7. Tell the user: "候補を N 件届けました。Deemus の『仕事の考え方』で採用してください" (in the user's language), with N as the number saved.
 
 ## Rules
 

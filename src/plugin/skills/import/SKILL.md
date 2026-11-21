@@ -1,16 +1,16 @@
 ---
 name: import
-description: Import the judgments a user made in past Claude Code sessions saved on this machine into Deemento. Use when the user asks to import, backfill, or record judgments from earlier sessions or session logs.
+description: Import the judgments a user made in past Claude Code sessions saved on this machine into Deemus. Use when the user asks to import, backfill, or record judgments from earlier sessions or session logs.
 ---
 
-# Deemento Import
+# Deemus Import
 
 Read past Claude Code session records on this machine, pick out the judgments
-the user made while building with AI, and record them in Deemento.
+the user made while building with AI, and record them in Deemus.
 
-Deemento does not read local files. You read the session records, condense
+Deemus does not read local files. You read the session records, condense
 them with the bundled script, extract the judgments yourself, and send them to
-the Deemento MCP tools.
+the Deemus MCP tools.
 
 Reply to the user in the user's language, and write every recorded judgment
 (titles, situations, decisions, workstream names and summaries) in the user's
@@ -18,12 +18,12 @@ language too.
 
 ## Tools
 
-This skill uses the Deemento MCP tools whose names end in `project_list`,
+This skill uses the Deemus MCP tools whose names end in `project_list`,
 `project_create`, `project_context` and `judgment_add`. The prefix in front of
 the name depends on how the server was connected (through this plugin or
 registered by hand); match on the end of the name only.
 
-If none of these tools is available, tell the user that the Deemento MCP server
+If none of these tools is available, tell the user that the Deemus MCP server
 is not connected and stop. Do not write judgments anywhere else.
 
 ## Steps
@@ -162,7 +162,7 @@ is not connected and stop. Do not write judgments anywhere else.
    - the workstreams that were newly created;
    - the judgments recorded with an empty reason (`self` without `reason`,
      `adopted` without `own_reason`), so the user can add the reason in
-     Deemento;
+     Deemus;
    - the technology names you sent that were not in the project's skill list
      (the response does not return them, so keep your own list as you go);
    - judgments about another product that you did not record (see below);

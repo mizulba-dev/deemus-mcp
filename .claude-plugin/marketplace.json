@@ -1,17 +1,17 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
-  "name": "deemento",
+  "name": "deemus",
   "version": "1.0.0",
-  "description": "Deemento plugin marketplace — keep the judgments you make while building with AI.",
+  "description": "Deemus plugin marketplace — keep the judgments you make while building with AI.",
   "owner": {
     "name": "mizulba"
   },
   "plugins": [
     {
-      "name": "deemento",
-      "displayName": "Deemento",
+      "name": "deemus",
+      "displayName": "Deemus",
       "source": "./src/plugin",
-      "description": "Deemento — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated."
+      "description": "Deemus — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated."
     }
   ]
 }

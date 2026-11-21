@@ -1,45 +1,45 @@
-# Deemento Plugin
+# Deemus Plugin
 
-Deemento keeps the judgments you make while building with AI, and shows the ones you choose. It records what you decided, what you adopted from the AI, and what you delegated.
+Deemus keeps the judgments you make while building with AI, and shows the ones you choose. It records what you decided, what you adopted from the AI, and what you delegated.
 
-This plugin is in development. It does not yet bundle the MCP server connection; register the Deemento MCP server in your client yourself.
+This plugin is in development. It does not yet bundle the MCP server connection; register the Deemus MCP server in your client yourself.
 
 ## Install
 
 ### Claude Code
 
 ```
-/plugin marketplace add mizulba-dev/deemento-mcp
-/plugin install deemento@deemento
+/plugin marketplace add mizulba-dev/deemus-mcp
+/plugin install deemus@deemus
 ```
 
 ### Codex
 
 ```
-codex plugin marketplace add mizulba-dev/deemento-mcp
-codex plugin add deemento@deemento
+codex plugin marketplace add mizulba-dev/deemus-mcp
+codex plugin add deemus@deemus
 ```
 
 ## Record judgments
 
-When a piece of work is done, ask the AI to "record to Deemento". With this plugin installed, the `record` skill looks back over the conversation and records the judgments you made. In clients without the skill, the Deemento tools describe the essentials of what to record.
+When a piece of work is done, ask the AI to "record to Deemus". With this plugin installed, the `record` skill looks back over the conversation and records the judgments you made. In clients without the skill, the Deemus tools describe the essentials of what to record.
 
 To record past Claude Code sessions, ask the AI to import them; the `import` skill reads the session files on your machine. Do not import sessions you already recorded with the `record` skill; the same judgments would be recorded twice.
 
 ## Sum up your work principles
 
-Ask the AI to "sum up my work principles in Deemento". The `work-principles` skill reads your recorded judgments and proposes the criteria that run through judgments made in different situations, each backed by those judgments. Adopt the ones you agree with in Deemento.
+Ask the AI to "sum up my work principles in Deemus". The `work-principles` skill reads your recorded judgments and proposes the criteria that run through judgments made in different situations, each backed by those judgments. Adopt the ones you agree with in Deemus.
 
 ### Record and look back automatically in Claude Code and Codex
 
 Paste this into your global rules (`~/.claude/CLAUDE.md` for Claude Code, `~/.codex/AGENTS.md` for Codex):
 
 ```
-## Deemento
+## Deemus
 
-When you finish a piece of work (a feature, a fix, or something the user decided), use the Deemento record skill to record the judgments the user made since the last recording, without asking first. Do nothing when there is no judgment worth recording.
+When you finish a piece of work (a feature, a fix, or something the user decided), use the Deemus record skill to record the judgments the user made since the last recording, without asking first. Do nothing when there is no judgment worth recording.
 
-Before proposing a design, an implementation approach, or a refactoring direction, use Deemento's judgment_search to check the past judgments and rejected options of this repository's project, and do not propose anything that contradicts them. If the project cannot be determined, do not search.
+Before proposing a design, an implementation approach, or a refactoring direction, use Deemus's judgment_search to check the past judgments and rejected options of this repository's project, and do not propose anything that contradicts them. If the project cannot be determined, do not search.
 ```
 
-Records are saved privately. Nothing is shown to others until you choose to publish it in Deemento.
+Records are saved privately. Nothing is shown to others until you choose to publish it in Deemus.

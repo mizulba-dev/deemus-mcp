@@ -1,7 +1,7 @@
 {
-  "name": "deemento-mcp",
+  "name": "deemus-mcp",
   "version": "0.1.0",
-  "description": "Deemento MCP Server",
+  "description": "Deemus MCP Server",
   "main": "dist/http.js",
   "type": "module",
   "scripts": {
@@ -15,14 +15,14 @@
   },
   "keywords": [
     "mcp",
-    "deemento",
+    "deemus",
     "ai",
     "judgment"
   ],
   "author": "mizulba",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mizulba-dev/deemento-mcp.git"
+    "url": "git+https://github.com/mizulba-dev/deemus-mcp.git"
   },
   "files": [
     "dist",

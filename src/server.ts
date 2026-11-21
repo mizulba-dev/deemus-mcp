@@ -18,8 +18,8 @@ export function createMcpServer(options: MCPServerOptions = {}): Server {
 
   const server = new Server(
     {
-      name: "deemento-mcp",
-      title: "deemento",
+      name: "deemus-mcp",
+      title: "Deemus",
       version: packageJson.version,
     },
     {
