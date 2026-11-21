@@ -117,12 +117,15 @@ describe("tool definitions", () => {
   it("describes judgment_search and judgment_update", () => {
     const search = byName("judgment_search").definition.description;
     for (const phrase of [
+      "automatically only when you work inside a repository",
       "before you propose a design",
       "repo_names",
       "do not search",
       "do not ask the user",
       "do not create a project",
-      "Only when the user asked you to search",
+      "Without a repository, call it only when the user asked you",
+      "ask which project they mean",
+      "When the user asked you to search and none or several fit, ask which project they mean",
       "include_superseded",
     ]) {
       expect(search).toContain(phrase);

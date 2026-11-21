@@ -6,14 +6,12 @@ export const judgmentSearchTool: ToolHandler = {
     name: "judgment_search",
     description:
       "Search the judgments the user recorded in one project (keyword and semantic search combined). " +
-      "Call it before you propose a design, an implementation approach or a refactoring direction, so that the proposal does not contradict what the user decided or the options the user rejected. " +
+      "Use it automatically only when you work inside a repository: call it before you propose a design, an implementation approach or a refactoring direction, so that the proposal does not contradict what the user decided or the options the user rejected. " +
       "Each result has id, title, involvement, workstream, decided_on, superseded_by_id, situation, decision, rejected_options, reason and outcome (strings cut at 300 characters), so one call is enough to decide. " +
       "mode is hybrid, or keyword when semantic search is unavailable. " +
       "Judgments the user has since revised are left out unless include_superseded is true; use it to see what a decision replaced. " +
-      "How to choose the project: when you work in a repository, compare the repository name with repo_names from project_list, then with name. " +
-      "Without a repository, compare the project name the user mentioned in the conversation with name. " +
-      "When exactly one project fits, search it. When none or several fit, do not search: go on without it, do not ask the user and do not create a project. " +
-      "Only when the user asked you to search, ask which project they mean.",
+      "Inside a repository, choose the project by comparing the repository name with repo_names from project_list, then with name. When exactly one project fits, search it. When none or several fit and you were about to search on your own, do not search: go on without it, do not ask the user and do not create a project. When the user asked you to search and none or several fit, ask which project they mean. " +
+      "Without a repository, call it only when the user asked you to look at past judgments: compare the project name the user mentioned with name, and when it does not settle on exactly one project, ask which project they mean.",
     inputSchema: {
       type: "object",
       properties: {
