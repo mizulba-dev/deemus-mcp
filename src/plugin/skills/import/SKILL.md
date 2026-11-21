@@ -1,11 +1,11 @@
 ---
 name: import
-description: Import the judgments a user made in past Claude Code sessions saved on this machine into Deemus. Use when the user asks to import, backfill, or record judgments from earlier sessions or session logs.
+description: Import the judgments a user made in past Claude Code or Codex sessions saved on this machine into Deemus. Use when the user asks to import, backfill, or record judgments from earlier sessions or session logs.
 ---
 
 # Deemus Import
 
-Read past Claude Code session records on this machine, pick out the judgments
+Read past Claude Code or Codex session records on this machine, pick out the judgments
 the user made while building with AI, and record them in Deemus.
 
 Deemus does not read local files. You read the session records, condense
@@ -30,7 +30,9 @@ is not connected and stop. Do not write judgments anywhere else.
 
 1. **Choose the sessions.**
    - If the user named session files or session IDs, use those.
-   - Otherwise look in the Claude Code session directory for the current
+   - Otherwise ask which client the sessions came from when it is not clear
+     (Claude Code, Codex, or both), and list them as below.
+   - **Claude Code**: look in the session directory for the current
      repository: `~/.claude/projects/<directory>/`, where `<directory>` is the
      absolute path of the repository with every character other than letters
      and digits replaced by `-`. If you cannot find it, list
@@ -40,6 +42,18 @@ is not connected and stop. Do not write judgments anywhere else.
      directory (records of sub-agents, not of the user). Ask which ones to
      import. To help the user recognize a session, you may run the script in
      step 4 on it and show its first user message.
+   - **Codex**: Codex keeps sessions by date, not by repository. Run
+
+     ```
+     node <this skill's directory>/references/prep.mjs --list-codex <repository directory>
+     ```
+
+     It prints one line per session, newest first: the file path, the start
+     time (UTC), the size and the start of the first user message. Only
+     conversations with the user whose working directory is the repository
+     or one of its subdirectories are listed; `codex exec` runs and
+     sub-agents are left out. If the repository was moved or renamed, run it
+     with the old path too. Ask which ones to import.
 
 2. **Choose the project.** Call `project_list`. Compare the repository name
    (the `Directory:` line of the script output, or the name of the current
@@ -61,9 +75,13 @@ is not connected and stop. Do not write judgments anywhere else.
    node <this skill's directory>/references/prep.mjs <session file> [--max-assistant-chars N]
    ```
 
-   It prints the session as plain conversation text, oldest first:
+   It reads both Claude Code and Codex records and prints the session as
+   plain conversation text, oldest first:
    - a header with the session ID, the period, the number of user messages,
-     and `Questions: N (answered M, declined or unanswered K)`;
+     and `Questions: N (answered M, declined or unanswered K)`. A Codex
+     record also has a `Client:` line. When it says the session is not a
+     conversation with the user (a `codex exec` run or a sub-agent), do not
+     record judgments from it and tell the user;
    - `### User (...)` blocks: what the user typed. A heading that ends with
      `sent while the AI was working` is a message the user sent while the AI
      was in the middle of a task, often to stop or redirect it. Treat it like
@@ -114,9 +132,10 @@ is not connected and stop. Do not write judgments anywhere else.
    `judgment_add`:
    - `project_id`: the project from step 2. If some judgments belong to a
      different product, see "Judgments about another product" below.
-   - `source.tool`: the name of the work environment, `claude-code`.
+   - `source.tool`: the client the session came from, `claude-code` or
+     `codex`.
    - `source.session_id`: the session file name without `.jsonl` (the ID in
-     the header line `# Session ...`).
+     the header line `# Session ...`; for Codex it starts with `rollout-`).
    - Up to 20 judgments per call; split larger sets into several calls.
    - `decided_on` (`YYYY-MM-DD`): the date of the message where the user
      decided. When a judgment spans several messages, use the message where

@@ -1,7 +1,9 @@
-import { readFileSync, statSync } from "node:fs";
-import { basename } from "node:path";
+import { readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { homedir } from "node:os";
+import { basename, join, resolve, sep } from "node:path";
 
-const USAGE = "usage: node prep.mjs <session.jsonl> [--max-assistant-chars N]";
+const USAGE =
+  "usage: node prep.mjs <session.jsonl> [--max-assistant-chars N]\n       node prep.mjs --list-codex <repository directory>";
 const DEFAULT_MAX_ASSISTANT_CHARS = 6000;
 const MAX_USER_CHARS = 4000;
 const MAX_OPTION_DESCRIPTION_CHARS = 200;
@@ -22,6 +24,9 @@ const DROPPED_BLOCKS = [
   "ide_selection",
   "ide_diagnostics",
   "user-prompt-submit-hook",
+  "environment_context",
+  "user_instructions",
+  "turn_aborted",
 ];
 const DROPPED_BLOCK_PATTERNS = DROPPED_BLOCKS.map(
   (tag) => new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?</${tag}>`, "g"),
@@ -32,6 +37,7 @@ const DROPPED_PREFIXES = [
   "This session is being continued from a previous conversation",
   "[Request interrupted by user",
   "Another Claude session sent a message",
+  "# AGENTS.md instructions for ",
 ];
 
 const REDACTED = "[REDACTED]";
@@ -93,6 +99,11 @@ function usageError(message) {
 }
 
 function parseArgs(argv) {
+  if (argv[0] === "--list-codex") {
+    if (argv.length !== 2)
+      usageError("--list-codex needs one repository directory");
+    return { listCodex: argv[1] };
+  }
   let file;
   let maxAssistantChars = DEFAULT_MAX_ASSISTANT_CHARS;
   for (let i = 0; i < argv.length; i++) {
@@ -774,8 +785,223 @@ function convert(lines, sessionId, maxAssistantChars) {
   return { output: [header, ...body].join("\n\n") + "\n", skipped };
 }
 
+function parseLines(lines) {
+  const entries = [];
+  let skipped = 0;
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    try {
+      const entry = JSON.parse(line);
+      if (entry && typeof entry === "object") entries.push(entry);
+    } catch {
+      skipped += 1;
+    }
+  }
+  return { entries, skipped };
+}
+
+function isCodexRecord(entries) {
+  return entries.some(
+    (entry) => entry.type === "session_meta" && isObject(entry.payload),
+  );
+}
+
+function codexKind(meta) {
+  if (isObject(meta?.source)) return "subagent";
+  if (meta?.source === "exec") return "exec";
+  return "conversation";
+}
+
+const CODEX_KIND_LABELS = {
+  conversation: "Codex (conversation with the user)",
+  exec: "Codex (codex exec run, not a conversation with the user)",
+  subagent: "Codex (sub-agent, not a conversation with the user)",
+};
+
+function codexUserText(content) {
+  const texts = [];
+  for (const block of Array.isArray(content) ? content : []) {
+    if (block?.type === "input_image") {
+      texts.push("[image]");
+      continue;
+    }
+    if (block?.type !== "input_text" || typeof block.text !== "string")
+      continue;
+    const text = stripDroppedBlocks(block.text);
+    if (!text) continue;
+    if (DROPPED_PREFIXES.some((prefix) => text.startsWith(prefix))) continue;
+    texts.push(text);
+  }
+  return texts.join("\n");
+}
+
+function codexAssistantText(content) {
+  return (Array.isArray(content) ? content : [])
+    .filter(
+      (block) =>
+        block?.type === "output_text" && typeof block.text === "string",
+    )
+    .map((block) => block.text)
+    .join("\n");
+}
+
+function convertCodex(entries, sessionId, maxAssistantChars) {
+  const parts = [];
+  let pendingTools = [];
+  let firstTimestamp = "";
+  let lastTimestamp = "";
+  let directory = "";
+  let kind = "conversation";
+  let seenMeta = false;
+  let userMessages = 0;
+
+  const flushTools = () => {
+    if (pendingTools.length) {
+      parts.push(renderTools(pendingTools));
+      pendingTools = [];
+    }
+  };
+
+  for (const entry of entries) {
+    const payload = isObject(entry.payload) ? entry.payload : {};
+    const timestamp =
+      typeof entry.timestamp === "string" ? entry.timestamp : "";
+
+    if (entry.type === "session_meta") {
+      if (!seenMeta) {
+        seenMeta = true;
+        kind = codexKind(payload);
+        if (typeof payload.cwd === "string" && payload.cwd) {
+          directory = basename(payload.cwd);
+        }
+      }
+      continue;
+    }
+    if (entry.type !== "response_item") continue;
+    if (timestamp && formatTime(timestamp)) {
+      if (!firstTimestamp) firstTimestamp = timestamp;
+      lastTimestamp = timestamp;
+    }
+
+    if (payload.type === "message" && payload.role === "user") {
+      const text = codexUserText(payload.content);
+      if (!text) continue;
+      flushTools();
+      userMessages += 1;
+      parts.push(
+        `### User (${formatTime(timestamp)})\n${truncate(redact(text), MAX_USER_CHARS)}`,
+      );
+    } else if (payload.type === "message" && payload.role === "assistant") {
+      const text = stripDroppedBlocks(codexAssistantText(payload.content));
+      if (!text) continue;
+      flushTools();
+      parts.push(`### AI\n${truncate(redact(text), maxAssistantChars)}`);
+    } else if (
+      (payload.type === "function_call" ||
+        payload.type === "custom_tool_call" ||
+        payload.type === "local_shell_call") &&
+      typeof (payload.name ?? "shell") === "string"
+    ) {
+      pendingTools.push(payload.name ?? "shell");
+    }
+  }
+  flushTools();
+
+  const period = firstTimestamp
+    ? `${formatTime(firstTimestamp)} - ${formatTime(lastTimestamp)}`
+    : "(no timestamps)";
+  const header = [
+    `# Session ${sessionId}`,
+    `Client: ${CODEX_KIND_LABELS[kind]}`,
+    ...(directory ? [`Directory: ${redact(directory)}`] : []),
+    `Period: ${period}`,
+    `User messages: ${userMessages}`,
+    "Questions: 0 (answered 0, declined or unanswered 0)",
+  ].join("\n");
+  return [header, ...parts].join("\n\n") + "\n";
+}
+
+function codexSessionFiles(root) {
+  const found = [];
+  const walk = (dir) => {
+    let names;
+    try {
+      names = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of names) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (/^rollout-.*\.jsonl$/.test(entry.name)) found.push(path);
+    }
+  };
+  walk(root);
+  return found;
+}
+
+function listCodex(repository) {
+  const codexHome = process.env.CODEX_HOME || join(homedir(), ".codex");
+  let target = resolve(repository);
+  try {
+    target = realpathSync(target);
+  } catch {}
+  const rows = [];
+  for (const file of codexSessionFiles(join(codexHome, "sessions"))) {
+    let entries;
+    try {
+      entries = parseLines(readFileSync(file, "utf8").split(/\r?\n/)).entries;
+    } catch {
+      continue;
+    }
+    const meta = entries.find(
+      (entry) => entry.type === "session_meta",
+    )?.payload;
+    if (!isObject(meta) || codexKind(meta) !== "conversation") continue;
+    if (typeof meta.cwd !== "string") continue;
+    if (meta.cwd !== target && !meta.cwd.startsWith(target + sep)) continue;
+    let first = "";
+    for (const entry of entries) {
+      const payload = entry.payload;
+      if (
+        entry.type === "response_item" &&
+        isObject(payload) &&
+        payload.type === "message" &&
+        payload.role === "user"
+      ) {
+        first = codexUserText(payload.content);
+        if (first) break;
+      }
+    }
+    const started = entries.find(
+      (entry) => entry.type === "session_meta",
+    )?.timestamp;
+    rows.push({
+      file,
+      started: typeof started === "string" ? started : "",
+      size: statSync(file).size,
+      first: truncate(redact(first.replace(/\s+/g, " ").trim()), 80),
+    });
+  }
+  rows.sort((a, b) =>
+    a.started < b.started ? 1 : a.started > b.started ? -1 : 0,
+  );
+  return rows
+    .map(
+      (row) =>
+        `${row.file}\t${formatTime(row.started) || "(no time)"}\t${Math.ceil(row.size / 1024)} KB\t${row.first}`,
+    )
+    .join("\n");
+}
+
 function main() {
-  const { file, maxAssistantChars } = parseArgs(process.argv.slice(2));
+  const args = parseArgs(process.argv.slice(2));
+  if (args.listCodex !== undefined) {
+    const listing = listCodex(args.listCodex);
+    process.stdout.write(listing ? `${listing}\n` : "");
+    return;
+  }
+  const { file, maxAssistantChars } = args;
   let source;
   try {
     if (!statSync(file).isFile()) usageError(`not a file: ${file}`);
@@ -784,11 +1010,14 @@ function main() {
     usageError(`cannot read session file: ${file}`);
   }
   const sessionId = basename(file).replace(/\.jsonl$/, "");
-  const { output, skipped } = convert(
-    source.split(/\r?\n/),
-    sessionId,
-    maxAssistantChars,
-  );
+  const lines = source.split(/\r?\n/);
+  const parsed = parseLines(lines);
+  const { output, skipped } = isCodexRecord(parsed.entries)
+    ? {
+        output: convertCodex(parsed.entries, sessionId, maxAssistantChars),
+        skipped: parsed.skipped,
+      }
+    : convert(lines, sessionId, maxAssistantChars);
   process.stdout.write(output);
   process.stderr.write(`prep: skipped ${skipped} malformed line(s)\n`);
 }

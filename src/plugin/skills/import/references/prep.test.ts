@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -684,5 +684,255 @@ describe("prep.mjs questions the user wanted to clarify", () => {
     ]) {
       expect(out, boilerplate).not.toContain(boilerplate);
     }
+  });
+});
+
+const codexDir = join(here, "__fixtures__", "codex");
+const codexSession =
+  "rollout-2026-03-02T10-00-00-0000c0de-0000-4000-8000-000000000001";
+const codexExec =
+  "rollout-2026-03-03T09-00-00-0000c0de-0000-4000-8000-000000000002";
+
+function runWithEnv(args: string[], env: NodeJS.ProcessEnv): Promise<Run> {
+  return new Promise((resolve) => {
+    execFile(
+      process.execPath,
+      [script, ...args],
+      { encoding: "utf8", env: { ...process.env, ...env } },
+      (error, stdout, stderr) => {
+        const code =
+          error === null ? 0 : typeof error.code === "number" ? error.code : 1;
+        resolve({ code, stdout, stderr });
+      },
+    );
+  });
+}
+
+describe("prep.mjs Codex sessions", () => {
+  let result: Run;
+
+  beforeAll(async () => {
+    result = await run([join(codexDir, `${codexSession}.jsonl`)]);
+  });
+
+  it("writes the header with the client kind", () => {
+    expect(result.code).toBe(0);
+    expect(result.stdout.split("\n").slice(0, 6)).toEqual([
+      `# Session ${codexSession}`,
+      "Client: Codex (conversation with the user)",
+      "Directory: example-shop",
+      "Period: 2026-03-02 10:00 UTC - 2026-03-02 10:04 UTC",
+      "User messages: 2",
+      "Questions: 0 (answered 0, declined or unanswered 0)",
+    ]);
+  });
+
+  it("keeps the user's and the AI's words in order, with tool names only", () => {
+    const out = result.stdout;
+    const order = [
+      "### User (2026-03-02 10:01 UTC)\nCheckout times out",
+      "### AI\nI will look at the checkout client first.",
+      "[AI used tools: exec x2, view_image]",
+      "### AI\nTwo options: retry up to 3 times",
+      "### User (2026-03-02 10:03 UTC)\nFail fast.",
+      "### AI\nUnderstood: no retries",
+    ].map((text) => out.indexOf(text));
+    for (const at of order) expect(at).toBeGreaterThanOrEqual(0);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it("drops instructions, context, reasoning, tool input and output, and duplicate events", () => {
+    for (const dropped of [
+      "AGENTS.md instructions",
+      "Always answer in English",
+      "environment_context",
+      "<cwd>",
+      "permissions instructions",
+      "sandbox rules",
+      "thinking about retries",
+      "cat src/checkout.ts",
+      "TOOL OUTPUT SHOULD NOT APPEAR",
+      "DUPLICATE EVENT SHOULD NOT APPEAR",
+      "turn_aborted",
+      "interrupted the previous turn",
+    ]) {
+      expect(result.stdout, dropped).not.toContain(dropped);
+    }
+  });
+
+  it("redacts key-shaped strings and reports malformed lines", () => {
+    expect(result.stdout).toContain(
+      "Use API_TOKEN=[REDACTED] for the sandbox check.",
+    );
+    expect(result.stdout).toContain(
+      "I will read PAYMENT_SECRET=[REDACTED] from the env.",
+    );
+    expect(result.stdout).not.toContain("fake-example-value-0000");
+    expect(result.stdout).not.toContain("fake-ai-side-value-0000");
+    expect(result.stderr).toBe("prep: skipped 1 malformed line(s)\n");
+  });
+
+  it("labels a sub-agent as not a conversation, using the first session_meta", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "prep-codex-sub-"));
+    try {
+      const file = join(dir, "rollout-sub.jsonl");
+      writeFileSync(
+        file,
+        [
+          {
+            type: "session_meta",
+            payload: { cwd: "/w/a", source: { subagent: {} } },
+          },
+          { type: "session_meta", payload: { cwd: "/w/b", source: "cli" } },
+        ]
+          .map((entry) => JSON.stringify(entry))
+          .join("\n"),
+      );
+      const out = (await run([file])).stdout;
+      expect(out).toContain(
+        "Client: Codex (sub-agent, not a conversation with the user)",
+      );
+      expect(out).toContain("Directory: a\n");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("labels a codex exec run as not a conversation", async () => {
+    const out = (await run([join(codexDir, `${codexExec}.jsonl`)])).stdout;
+    expect(out).toContain(
+      "Client: Codex (codex exec run, not a conversation with the user)",
+    );
+  });
+});
+
+describe("prep.mjs --list-codex", () => {
+  let home: string;
+
+  beforeAll(() => {
+    home = mkdtempSync(join(tmpdir(), "prep-codex-"));
+    const day = join(home, "sessions", "2026", "03", "02");
+    mkdirSync(day, { recursive: true });
+    const session = (
+      id: string,
+      time: string,
+      cwd: string,
+      source: unknown,
+      text: string,
+    ) =>
+      [
+        { timestamp: time, type: "session_meta", payload: { id, cwd, source } },
+        {
+          timestamp: time,
+          type: "response_item",
+          payload: {
+            type: "message",
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: "# AGENTS.md instructions for /x\n\n<INSTRUCTIONS>rules</INSTRUCTIONS>",
+              },
+              { type: "input_text", text },
+            ],
+          },
+        },
+      ]
+        .map((entry) => JSON.stringify(entry))
+        .join("\n");
+    const files: [string, string][] = [
+      [
+        "rollout-a.jsonl",
+        session(
+          "a",
+          "2026-03-02T10:00:00Z",
+          "/home/dev/example-shop",
+          "cli",
+          "Older talk",
+        ),
+      ],
+      [
+        "rollout-b.jsonl",
+        session(
+          "b",
+          "2026-03-02T12:00:00Z",
+          "/home/dev/example-shop/web",
+          "cli",
+          "Newer talk in a subdirectory with DB_PASSWORD=fake-list-value-0000",
+        ),
+      ],
+      [
+        "rollout-c.jsonl",
+        session(
+          "c",
+          "2026-03-02T13:00:00Z",
+          "/home/dev/example-shop",
+          "exec",
+          "Automated review",
+        ),
+      ],
+      [
+        "rollout-d.jsonl",
+        session(
+          "d",
+          "2026-03-02T14:00:00Z",
+          "/home/dev/example-shop",
+          { subagent: {} },
+          "Sub-agent",
+        ),
+      ],
+      [
+        "rollout-e.jsonl",
+        session(
+          "e",
+          "2026-03-02T15:00:00Z",
+          "/home/dev/example-shop-2",
+          "cli",
+          "Another repository",
+        ),
+      ],
+      [
+        "notes.jsonl",
+        session(
+          "f",
+          "2026-03-02T16:00:00Z",
+          "/home/dev/example-shop",
+          "cli",
+          "Not a rollout",
+        ),
+      ],
+    ];
+    for (const [name, body] of files) writeFileSync(join(day, name), body);
+  });
+
+  afterAll(() => {
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  it("lists conversations in the repository and its subdirectories, newest first", async () => {
+    const { code, stdout } = await runWithEnv(
+      ["--list-codex", "/home/dev/example-shop"],
+      { CODEX_HOME: home },
+    );
+    expect(code).toBe(0);
+    const rows = stdout
+      .trim()
+      .split("\n")
+      .map((line) => line.split("\t"));
+    expect(rows.map((row) => row[0].split("/").pop())).toEqual([
+      "rollout-b.jsonl",
+      "rollout-a.jsonl",
+    ]);
+    expect(rows[0][1]).toBe("2026-03-02 12:00 UTC");
+    expect(rows[0][3]).toBe(
+      "Newer talk in a subdirectory with DB_PASSWORD=[REDACTED]",
+    );
+    expect(rows[1][3]).toBe("Older talk");
+  });
+
+  it("needs exactly one directory", async () => {
+    const { code, stderr } = await run(["--list-codex"]);
+    expect(code).toBe(2);
+    expect(stderr).toContain("--list-codex needs one repository directory");
   });
 });

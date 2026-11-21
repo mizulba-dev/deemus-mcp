@@ -24,7 +24,7 @@ codex plugin add deemus@deemus
 
 When a piece of work is done, ask the AI to "record to Deemus". With this plugin installed, the `record` skill looks back over the conversation and records the judgments you made. In clients without the skill, the Deemus tools describe the essentials of what to record.
 
-To record past Claude Code sessions, ask the AI to import them; the `import` skill reads the session files on your machine. Do not import sessions you already recorded with the `record` skill; the same judgments would be recorded twice.
+To record past Claude Code or Codex sessions, ask the AI to import them; the `import` skill reads the session files on your machine (for Codex, only conversations with you; `codex exec` runs are skipped). Do not import sessions you already recorded with the `record` skill; the same judgments would be recorded twice.
 
 ## Sum up your work principles
 
