@@ -24,9 +24,15 @@ connected and stop.
 ## Steps
 
 1. Call `work_principles_context`. It returns `judgments` (id, title,
-   involvement, project, workstream, decided_on, situation_or_request, reason),
-   `principles` (the user's existing ones) and `new_judgments`.
-2. Read the judgments and find criteria that show up in 2 or more judgments
+   involvement, project, workstream, decided_on, situation_or_request, reason;
+   200 per call, newest first), `principles` (the user's existing ones),
+   `new_judgments` and `next_before_id`. While `next_before_id` is not null,
+   call it again with `before_id` set to that value, so that you read every
+   judgment the user recorded. If a call returns the same `next_before_id` as
+   the one you sent, stop reading. If a call fails, wait a minute and retry
+   with the same `before_id`; if it fails again, go on with what you read and
+   tell the user how many judgments you read.
+2. Read all the judgments and find criteria that show up in 2 or more judgments
    from different situations (different projects or workstreams).
 3. Drop anything that is a general lesson ("think carefully"), a rewording of
    a single judgment, or the same as an existing principle in `principles`.

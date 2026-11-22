@@ -595,6 +595,33 @@ describe("tool to API mapping", () => {
     expect(api.requests[0].path).toBe("/api/v1/mcp/work-principles/context");
   });
 
+  it("work_principles_context with before_id -> GET ?before_id=", async () => {
+    const client = createApiClient(api.url, "oat_t");
+
+    const result = await byName("work_principles_context").handler(
+      { before_id: 42 },
+      client,
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(api.requests[0].path).toBe(
+      "/api/v1/mcp/work-principles/context?before_id=42",
+    );
+  });
+
+  it("work_principles_context rejects a before_id that is not a positive integer", async () => {
+    const client = createApiClient(api.url, "oat_t");
+
+    for (const before_id of [0, -1, 1.5, "42"]) {
+      const result = await byName("work_principles_context").handler(
+        { before_id },
+        client,
+      );
+      expect(result.isError).toBe(true);
+    }
+    expect(api.requests).toHaveLength(0);
+  });
+
   it("work_principles_propose -> POST /api/v1/mcp/work-principles with candidates only", async () => {
     const response = { results: [{ status: "saved", id: 4 }] };
     api.respondWith(() => ({ body: response }));
