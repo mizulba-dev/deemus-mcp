@@ -7,7 +7,7 @@ export const judgmentSearchTool: ToolHandler = {
     description:
       "Search the judgments the user recorded in one project (keyword and semantic search combined). " +
       "Use it automatically only when you work inside a repository: call it before you propose a design, an implementation approach or a refactoring direction, so that the proposal does not contradict what the user decided or the options the user rejected. " +
-      "Each result has id, title, involvement, workstream, decided_on, superseded_by_id, situation, decision, rejected_options, reason and outcome (strings cut at 300 characters), so one call is enough to decide. " +
+      "Each result has id, title, involvement, workstream, decided_on, superseded_by_id, scope (direction, local, or null when not yet set), scope_by_user, situation, decision, rejected_options, reason and outcome (strings cut at 300 characters), so one call is enough to decide. " +
       "mode is hybrid, or keyword when semantic search is unavailable. " +
       "Judgments the user has since revised are left out unless include_superseded is true; use it to see what a decision replaced. " +
       "session_id narrows the results to the judgments recorded from that session (source.session_id of judgment_add); with session_id, query may be left out and semantic search is not used. To read one judgment in full, use judgment_get. " +

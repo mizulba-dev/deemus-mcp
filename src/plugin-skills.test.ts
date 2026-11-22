@@ -9,6 +9,7 @@ const skillsRoot = resolve(
 );
 
 const SHARED_SECTIONS = [
+  "### Scope",
   "### Fields",
   "### Workstreams",
   "### Judgments about another product",

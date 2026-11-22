@@ -23,6 +23,7 @@ export async function handleJudgmentUpdate(
         "outcome",
         "reason",
         "superseded_by_id",
+        "scope",
         "skills",
         "workstream",
       ]),

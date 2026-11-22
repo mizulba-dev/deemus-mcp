@@ -13,6 +13,8 @@ import {
   skillSuggestionDiscardTool,
   skillUpdateTool,
   judgmentGetTool,
+  judgmentScopeListTool,
+  judgmentScopeSetTool,
   projectDeleteTool,
   projectUpdateTool,
   workstreamMergeTool,
@@ -36,6 +38,7 @@ const READ_ONLY_TOOLS = new Set([
   "project_context",
   "judgment_search",
   "judgment_get",
+  "judgment_scope_list",
   "skill_list",
   "work_principles_context",
 ]);
@@ -59,6 +62,7 @@ const IDEMPOTENT_TOOLS = new Set([
   "judgment_add",
   "judgment_update",
   "judgment_discard",
+  "judgment_scope_set",
 ]);
 
 const TOOL_TITLES: Record<string, string> = {
@@ -80,6 +84,8 @@ const TOOL_TITLES: Record<string, string> = {
   judgment_search: "Search judgments",
   judgment_update: "Update a judgment",
   judgment_discard: "Discard a judgment",
+  judgment_scope_list: "List judgments without a scope",
+  judgment_scope_set: "Set the scope of judgments",
   work_principles_context: "Get work principles context",
   work_principles_propose: "Propose work principles",
 };
@@ -120,6 +126,8 @@ export function getRegisteredTools(): ToolHandler[] {
     judgmentGetTool,
     judgmentUpdateTool,
     judgmentDiscardTool,
+    judgmentScopeListTool,
+    judgmentScopeSetTool,
     skillListTool,
     skillAddTool,
     skillUpdateTool,

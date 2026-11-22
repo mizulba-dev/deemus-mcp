@@ -129,6 +129,18 @@ const annotationCases = [
     destructive: true,
   },
   {
+    name: "judgment_scope_list",
+    readOnly: true,
+    idempotent: true,
+    destructive: false,
+  },
+  {
+    name: "judgment_scope_set",
+    readOnly: false,
+    idempotent: true,
+    destructive: false,
+  },
+  {
     name: "work_principles_context",
     readOnly: true,
     idempotent: true,
@@ -143,7 +155,7 @@ const annotationCases = [
 ];
 
 describe("tool definitions", () => {
-  it("registers exactly the twenty tools in order", () => {
+  it("registers exactly the twenty-two tools in order", () => {
     expect(tools.map((t) => t.definition.name)).toEqual([
       "project_list",
       "project_create",
@@ -158,6 +170,8 @@ describe("tool definitions", () => {
       "judgment_get",
       "judgment_update",
       "judgment_discard",
+      "judgment_scope_list",
+      "judgment_scope_set",
       "skill_list",
       "skill_add",
       "skill_update",
@@ -322,6 +336,51 @@ describe("tool definitions", () => {
     expect(
       schema.properties.judgments.items.properties.supersedes.maxItems,
     ).toBe(10);
+  });
+
+  it("exposes scope as direction or local on judgment_add and judgment_update", () => {
+    const add = byName("judgment_add").definition.inputSchema as {
+      properties: {
+        judgments: {
+          items: { properties: { scope: { enum: string[] } } };
+        };
+      };
+    };
+    expect(add.properties.judgments.items.properties.scope.enum).toEqual([
+      "direction",
+      "local",
+    ]);
+    const update = byName("judgment_update").definition.inputSchema
+      .properties as { scope: { type: string; enum: string[] } };
+    expect(update.scope).toMatchObject({
+      type: "string",
+      enum: ["direction", "local"],
+    });
+    expect(byName("judgment_add").definition.description).toContain(
+      "if unsure, direction",
+    );
+    expect(byName("judgment_update").definition.description).toContain(
+      "judgment_scope_set never overwrites it",
+    );
+    for (const name of ["judgment_get", "judgment_search"]) {
+      expect(byName(name).definition.description, name).toContain(
+        "scope_by_user",
+      );
+    }
+  });
+
+  it("describes judgment_scope_list and judgment_scope_set", () => {
+    const list = byName("judgment_scope_list").definition;
+    expect(list.inputSchema.required).toEqual(["project_id"]);
+    expect(list.description).toContain("next_before_id");
+    expect(list.description).toContain("only when the user asked");
+    const set = byName("judgment_scope_set").definition;
+    expect(set.inputSchema.required).toEqual(["items"]);
+    expect(
+      (set.inputSchema.properties.items as { maxItems: number }).maxItems,
+    ).toBe(100);
+    expect(set.description).toContain("skipped_user_set");
+    expect(set.description).toContain("only when the user asked");
   });
 
   it("does not expose a public mark on judgment_add", () => {
@@ -620,6 +679,98 @@ describe("tool to API mapping", () => {
       expect(result.isError).toBe(true);
     }
     expect(api.requests).toHaveLength(0);
+  });
+
+  it("judgment_update sends scope", async () => {
+    api.respondWith(() => ({ body: { judgment: { id: 4 } } }));
+    const client = createApiClient(api.url, "oat_t");
+
+    await byName("judgment_update").handler(
+      { judgment_id: 4, scope: "local" },
+      client,
+    );
+
+    expect(api.requests[0].body).toEqual({ scope: "local" });
+  });
+
+  it("judgment_scope_list -> GET /api/v1/mcp/projects/:id/judgments/unscoped", async () => {
+    api.respondWith(() => ({
+      body: { judgments: [], next_before_id: null, remaining: 0 },
+    }));
+    const client = createApiClient(api.url, "oat_t");
+
+    const first = await byName("judgment_scope_list").handler(
+      { project_id: 3 },
+      client,
+    );
+    const next = await byName("judgment_scope_list").handler(
+      { project_id: 3, before_id: 42, limit: 100 },
+      client,
+    );
+
+    expect(first.isError).toBeFalsy();
+    expect(first.structuredContent).toEqual({
+      judgments: [],
+      next_before_id: null,
+      remaining: 0,
+    });
+    expect(next.isError).toBeFalsy();
+    expect(api.requests.map((r) => [r.method, r.path])).toEqual([
+      ["GET", "/api/v1/mcp/projects/3/judgments/unscoped"],
+      [
+        "GET",
+        "/api/v1/mcp/projects/3/judgments/unscoped?before_id=42&limit=100",
+      ],
+    ]);
+  });
+
+  it("judgment_scope_list rejects a bad project_id, before_id or limit without calling the API", async () => {
+    const client = createApiClient(api.url, "oat_t");
+
+    for (const args of [
+      { project_id: "x" },
+      { project_id: 0 },
+      { project_id: 3, before_id: 0 },
+      { project_id: 3, before_id: 1.5 },
+      { project_id: 3, limit: -1 },
+      { project_id: 3, limit: "50" },
+    ]) {
+      const result = await byName("judgment_scope_list").handler(args, client);
+      expect(result.isError, JSON.stringify(args)).toBe(true);
+      expect((result.structuredContent?.error as { code: string }).code).toBe(
+        "invalid_input",
+      );
+    }
+    expect(api.requests).toHaveLength(0);
+  });
+
+  it("judgment_scope_set -> POST /api/v1/mcp/judgments/scope with items only", async () => {
+    api.respondWith(() => ({
+      body: { updated: [1], skipped_user_set: [2], not_found: [] },
+    }));
+    const client = createApiClient(api.url, "oat_t");
+    const items = [
+      { judgment_id: 1, scope: "direction" },
+      { judgment_id: 2, scope: "local" },
+    ];
+
+    const result = await byName("judgment_scope_set").handler(
+      { items, ignored: "x" },
+      client,
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual({
+      updated: [1],
+      skipped_user_set: [2],
+      not_found: [],
+    });
+    expect(api.requests[0].method).toBe("POST");
+    expect(api.requests[0].path).toBe("/api/v1/mcp/judgments/scope");
+    expect(api.requests[0].body).toEqual({ items });
+    expect(validateArgs(byName("judgment_scope_set").definition, {})).toBe(
+      "items is required",
+    );
   });
 
   it("work_principles_propose -> POST /api/v1/mcp/work-principles with candidates only", async () => {

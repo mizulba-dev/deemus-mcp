@@ -145,6 +145,25 @@ Where the line falls:
 - One piece of delegated work is one judgment, even when the user approved it
   stage by stage. Keep the `ai_decisions` that shaped the result, up to 10.
 
+### Scope
+
+Set `scope` on every judgment. It says how long the judgment holds. Choose one
+of two:
+
+- `direction` — it still holds after the work is done, and later work builds
+  on it: a mechanism, how data is kept, the structure of a screen, pricing or
+  limits, how something is published. Examples: "keep the refresh token in an
+  HttpOnly cookie", "cap each user at 50 API calls a day", "split the settings
+  page into three tabs".
+- `local` — a choice for that piece of work only; its effect ends with the
+  work: the steps taken that time, doing it now or later, the scope of the
+  task, a temporary switch in operation. Examples: "commit the generated mocks
+  in this change", "leave the translation for a later change", "turn off the
+  nightly job while the migration runs".
+
+If you are unsure, choose `direction`. Do not set `scope` from how much the
+user said about it; judge by whether it still holds after the work.
+
 ### Fields
 
 Use only the keys of the chosen involvement (`judgment_add` rejects the
@@ -156,7 +175,8 @@ others):
 - `delegated`: `request`, `why_needed`, `conditions`, `verified`,
   `ai_decisions`
 
-Also send `title`, and `outcome` when the record shows what came of it.
+Also send `title` and `scope` (see Scope), and `outcome` when the record
+shows what came of it.
 
 Limits (`judgment_add` rejects values over them):
 

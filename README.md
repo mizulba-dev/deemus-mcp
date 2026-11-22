@@ -21,6 +21,8 @@ The server speaks Streamable HTTP (stateless, `POST /mcp`) and forwards the clie
 | `judgment_get`             | Get one judgment with every field, including quotes and skills.                                                                             |
 | `judgment_update`          | Fix a recorded judgment (title, details, quotes, skills, workstream), add an outcome or your reason, or link the judgment that replaced it. |
 | `judgment_discard`         | Discard a recorded judgment, such as a duplicate.                                                                                           |
+| `judgment_scope_list`      | List the judgments of a project whose scope (direction or local) is not set yet.                                                            |
+| `judgment_scope_set`       | Set the scope of up to 100 judgments; scopes you set yourself are kept.                                                                     |
 | `skill_list`               | List your skill names and the suggested names waiting to be added.                                                                          |
 | `skill_add`                | Add a tech or domain name to your skill list (links judgments that suggested it).                                                           |
 | `skill_update`             | Rename or hide a skill.                                                                                                                     |

@@ -9,6 +9,8 @@ export * from "./judgment_search/index.js";
 export * from "./judgment_update/index.js";
 export * from "./judgment_discard/index.js";
 export * from "./judgment_get/index.js";
+export * from "./judgment_scope_list/index.js";
+export * from "./judgment_scope_set/index.js";
 export * from "./workstream_update/index.js";
 export * from "./workstream_merge/index.js";
 export * from "./project_update/index.js";
