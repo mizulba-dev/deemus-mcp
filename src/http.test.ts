@@ -247,6 +247,7 @@ describe("HTTP MCP server", () => {
       "project_list",
       "project_create",
       "project_context",
+      "project_merge",
       "judgment_add",
       "judgment_search",
       "judgment_update",
@@ -301,6 +302,36 @@ describe("HTTP MCP server", () => {
     expect(toolRequests).toHaveLength(1);
     expect(toolRequests[0].method).toBe("POST");
     expect(toolRequests[0].path).toBe("/api/v1/mcp/projects/7/judgments");
+  });
+
+  it("calls project_merge with both project ids", async () => {
+    api.respondWith(() => ({ body: { project: { id: 3 } } }));
+    const client = new Client({ name: "test", version: "0" });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(`${base}/mcp`), {
+        requestInit: { headers: { authorization: "Bearer oat_flow" } },
+      }),
+    );
+
+    const result = await client.callTool({
+      name: "project_merge",
+      arguments: { project_id: 2, into_project_id: 3 },
+    });
+    const invalid = await client.callTool({
+      name: "project_merge",
+      arguments: { project_id: 2, into_project_id: 0 },
+    });
+    await client.close();
+
+    expect(result.isError).toBeFalsy();
+    expect(invalid.isError).toBe(true);
+    const toolRequests = api.requests.filter(
+      (r) => r.path !== "/api/v1/mcp/session",
+    );
+    expect(toolRequests).toHaveLength(1);
+    expect(toolRequests[0].method).toBe("POST");
+    expect(toolRequests[0].path).toBe("/api/v1/mcp/projects/2/merge");
+    expect(toolRequests[0].body).toEqual({ into_project_id: 3 });
   });
 
   it("forwards the fields judgment_update can fix", async () => {

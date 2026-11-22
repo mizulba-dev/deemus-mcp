@@ -13,6 +13,7 @@ import {
   projectContextTool,
   projectCreateTool,
   projectListTool,
+  projectMergeTool,
   workPrinciplesContextTool,
   workPrinciplesProposeTool,
 } from "./handlers/index.js";
@@ -25,7 +26,7 @@ const READ_ONLY_TOOLS = new Set([
   "judgment_search",
   "work_principles_context",
 ]);
-const DESTRUCTIVE_TOOLS = new Set<string>(["judgment_update"]);
+const DESTRUCTIVE_TOOLS = new Set<string>(["project_merge", "judgment_update"]);
 const IDEMPOTENT_TOOLS = new Set([
   "project_create",
   "judgment_add",
@@ -36,6 +37,7 @@ const TOOL_TITLES: Record<string, string> = {
   project_list: "List projects",
   project_create: "Create a project",
   project_context: "Get project context",
+  project_merge: "Merge projects",
   judgment_add: "Add judgments",
   judgment_search: "Search judgments",
   judgment_update: "Update a judgment",
@@ -69,6 +71,7 @@ export function getRegisteredTools(): ToolHandler[] {
     projectListTool,
     projectCreateTool,
     projectContextTool,
+    projectMergeTool,
     judgmentAddTool,
     judgmentSearchTool,
     judgmentUpdateTool,

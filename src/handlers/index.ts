@@ -1,6 +1,7 @@
 export * from "./project_list/index.js";
 export * from "./project_create/index.js";
 export * from "./project_context/index.js";
+export * from "./project_merge/index.js";
 export * from "./judgment_add/index.js";
 export * from "./work_principles_context/index.js";
 export * from "./work_principles_propose/index.js";

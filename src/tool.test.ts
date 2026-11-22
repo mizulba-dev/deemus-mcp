@@ -49,6 +49,12 @@ const annotationCases = [
     destructive: false,
   },
   {
+    name: "project_merge",
+    readOnly: false,
+    idempotent: false,
+    destructive: true,
+  },
+  {
     name: "judgment_add",
     readOnly: false,
     idempotent: true,
@@ -81,11 +87,12 @@ const annotationCases = [
 ];
 
 describe("tool definitions", () => {
-  it("registers exactly the eight tools in order", () => {
+  it("registers exactly the nine tools in order", () => {
     expect(tools.map((t) => t.definition.name)).toEqual([
       "project_list",
       "project_create",
       "project_context",
+      "project_merge",
       "judgment_add",
       "judgment_search",
       "judgment_update",
@@ -128,6 +135,17 @@ describe("tool definitions", () => {
       "never the AI's",
       "send only judgments made since the last call",
       "work_principles_hint",
+    ]) {
+      expect(description).toContain(phrase);
+    }
+  });
+
+  it("describes the rules of project_merge", () => {
+    const { description } = byName("project_merge").definition;
+    for (const phrase of [
+      "cannot be undone",
+      "get the user's confirmation",
+      "exactly the same name",
     ]) {
       expect(description).toContain(phrase);
     }
