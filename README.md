@@ -28,7 +28,7 @@ The server speaks Streamable HTTP (stateless, `POST /mcp`) and forwards the clie
 | `skill_update`             | Rename or hide a skill.                                                                                                                     |
 | `skill_merge`              | Merge one skill into another of the same kind.                                                                                              |
 | `skill_suggestion_discard` | Drop a suggested name without adding it.                                                                                                    |
-| `work_principles_context`  | Get your recent judgments and existing work principles.                                                                                     |
+| `work_principles_context`  | Get your judgments that set a direction (with what you chose and what you passed over) and existing work principles.                        |
 | `work_principles_propose`  | Send up to 5 work principle candidates, each backed by 2 to 10 judgments.                                                                   |
 
 Call `project_context` before `judgment_add`, and pick each judgment's workstream from the returned list. If `judgment_add` returns `needs_workstream_choice`, choose from the candidates and resend only that judgment.

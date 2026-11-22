@@ -270,6 +270,21 @@ describe("tool definitions", () => {
     }
   });
 
+  it("describes the judgments work_principles_context returns", () => {
+    const { description } = byName("work_principles_context").definition;
+    for (const phrase of [
+      "judgments that set a direction",
+      "delegated judgments",
+      "scope local",
+      "neither options nor a reason",
+      "decision (",
+      "rejected_options (",
+      "next_before_id",
+    ]) {
+      expect(description).toContain(phrase);
+    }
+  });
+
   it("describes the rules of work_principles_propose", () => {
     const { description } = byName("work_principles_propose").definition;
     for (const phrase of [
@@ -277,8 +292,11 @@ describe("tool definitions", () => {
       "0 to 5 candidates",
       "candidates empty",
       "2 to 10 judgment ids",
-      "what to prioritize when choosing",
-      "what to check before choosing",
+      "show adopted ones to other people",
+      "prioritize A over B",
+      "when ..., choose ...",
+      "how to operate or instruct the AI",
+      "confirmation procedures and checklists",
       "at least 2 judgments from different situations",
       "never rephrase a single judgment",
       "general lesson",
