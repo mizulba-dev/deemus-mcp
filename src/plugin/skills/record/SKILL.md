@@ -63,7 +63,9 @@ is not connected and stop. Do not write judgments anywhere else.
      the user decided (for delegated work, where the user handed it over).
 
 5. **Handle the results.** Results come back in the order you sent them.
-   - `saved`: done. `duplicate: true` means it was already recorded.
+   - `saved`: done. `duplicate: true` means it was already recorded. With
+     `discarded: true` the user discarded it: leave it, and do not report it
+     as recorded.
    - `needs_workstream_choice`: nothing was saved for that judgment. Choose one
      of `candidates` (send `workstream: {id}`), or, if none of them is the same
      workstream, send `workstream: {name, summary, create_new: true}`. Resend only

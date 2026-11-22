@@ -8,6 +8,7 @@ import {
 import { createApiClient } from "./services/api/index.js";
 import {
   judgmentAddTool,
+  judgmentDiscardTool,
   judgmentSearchTool,
   judgmentUpdateTool,
   projectContextTool,
@@ -26,11 +27,16 @@ const READ_ONLY_TOOLS = new Set([
   "judgment_search",
   "work_principles_context",
 ]);
-const DESTRUCTIVE_TOOLS = new Set<string>(["project_merge", "judgment_update"]);
+const DESTRUCTIVE_TOOLS = new Set<string>([
+  "project_merge",
+  "judgment_update",
+  "judgment_discard",
+]);
 const IDEMPOTENT_TOOLS = new Set([
   "project_create",
   "judgment_add",
   "judgment_update",
+  "judgment_discard",
 ]);
 
 const TOOL_TITLES: Record<string, string> = {
@@ -41,6 +47,7 @@ const TOOL_TITLES: Record<string, string> = {
   judgment_add: "Add judgments",
   judgment_search: "Search judgments",
   judgment_update: "Update a judgment",
+  judgment_discard: "Discard a judgment",
   work_principles_context: "Get work principles context",
   work_principles_propose: "Propose work principles",
 };
@@ -75,6 +82,7 @@ export function getRegisteredTools(): ToolHandler[] {
     judgmentAddTool,
     judgmentSearchTool,
     judgmentUpdateTool,
+    judgmentDiscardTool,
     workPrinciplesContextTool,
     workPrinciplesProposeTool,
   ].map(withToolAnnotations);

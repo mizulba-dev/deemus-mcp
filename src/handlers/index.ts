@@ -7,3 +7,4 @@ export * from "./work_principles_context/index.js";
 export * from "./work_principles_propose/index.js";
 export * from "./judgment_search/index.js";
 export * from "./judgment_update/index.js";
+export * from "./judgment_discard/index.js";

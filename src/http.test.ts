@@ -251,6 +251,7 @@ describe("HTTP MCP server", () => {
       "judgment_add",
       "judgment_search",
       "judgment_update",
+      "judgment_discard",
       "work_principles_context",
       "work_principles_propose",
     ]);
@@ -302,6 +303,30 @@ describe("HTTP MCP server", () => {
     expect(toolRequests).toHaveLength(1);
     expect(toolRequests[0].method).toBe("POST");
     expect(toolRequests[0].path).toBe("/api/v1/mcp/projects/7/judgments");
+  });
+
+  it("calls judgment_discard with DELETE", async () => {
+    api.respondWith(() => ({ body: { judgment_id: 4, discarded: true } }));
+    const client = new Client({ name: "test", version: "0" });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(`${base}/mcp`), {
+        requestInit: { headers: { authorization: "Bearer oat_flow" } },
+      }),
+    );
+
+    const result = await client.callTool({
+      name: "judgment_discard",
+      arguments: { judgment_id: 4 },
+    });
+    await client.close();
+
+    expect(result.isError).toBeFalsy();
+    const toolRequests = api.requests.filter(
+      (r) => r.path !== "/api/v1/mcp/session",
+    );
+    expect(toolRequests).toHaveLength(1);
+    expect(toolRequests[0].method).toBe("DELETE");
+    expect(toolRequests[0].path).toBe("/api/v1/mcp/judgments/4");
   });
 
   it("calls project_merge with both project ids", async () => {

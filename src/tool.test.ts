@@ -73,6 +73,12 @@ const annotationCases = [
     destructive: true,
   },
   {
+    name: "judgment_discard",
+    readOnly: false,
+    idempotent: true,
+    destructive: true,
+  },
+  {
     name: "work_principles_context",
     readOnly: true,
     idempotent: true,
@@ -87,7 +93,7 @@ const annotationCases = [
 ];
 
 describe("tool definitions", () => {
-  it("registers exactly the nine tools in order", () => {
+  it("registers exactly the ten tools in order", () => {
     expect(tools.map((t) => t.definition.name)).toEqual([
       "project_list",
       "project_create",
@@ -96,6 +102,7 @@ describe("tool definitions", () => {
       "judgment_add",
       "judgment_search",
       "judgment_update",
+      "judgment_discard",
       "work_principles_context",
       "work_principles_propose",
     ]);
@@ -135,6 +142,16 @@ describe("tool definitions", () => {
       "never the AI's",
       "send only judgments made since the last call",
       "work_principles_hint",
+    ]) {
+      expect(description).toContain(phrase);
+    }
+  });
+
+  it("describes the rules of judgment_discard", () => {
+    const { description } = byName("judgment_discard").definition;
+    for (const phrase of [
+      "only when the user asked to discard it",
+      "is not recorded again",
     ]) {
       expect(description).toContain(phrase);
     }

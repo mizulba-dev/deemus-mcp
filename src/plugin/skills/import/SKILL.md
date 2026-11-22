@@ -145,13 +145,16 @@ is not connected and stop. Do not write judgments anywhere else.
      them to the user's local date before using them.
 
    Sending the same `session_id` and `title` again does not create a
-   duplicate, so a retry after an error is safe. A judgment whose title was
+   duplicate, even after the user retitled or discarded that judgment, so a
+   retry after an error is safe. A judgment whose title was
    worded differently is recorded again, so do not re-import a session the
    user has already imported, or one already recorded with the `record` skill
    (including recording started by the user's own rules), unless they ask.
 
 6. **Handle the results.** Results come back in the order you sent them.
-   - `saved`: done. `duplicate: true` means it was already recorded.
+   - `saved`: done. `duplicate: true` means it was already recorded. With
+     `discarded: true` the user discarded it: leave it, and do not report it
+     as recorded.
    - `needs_workstream_choice`: nothing was saved for that judgment. Choose one
      of `candidates` (send `workstream: {id}`), or, if none of them is the same
      workstream, send `workstream: {name, summary, create_new: true}`. Resend only
