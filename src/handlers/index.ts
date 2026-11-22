@@ -8,3 +8,8 @@ export * from "./work_principles_propose/index.js";
 export * from "./judgment_search/index.js";
 export * from "./judgment_update/index.js";
 export * from "./judgment_discard/index.js";
+export * from "./judgment_get/index.js";
+export * from "./workstream_update/index.js";
+export * from "./workstream_merge/index.js";
+export * from "./project_update/index.js";
+export * from "./project_delete/index.js";

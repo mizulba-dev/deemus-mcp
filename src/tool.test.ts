@@ -31,6 +31,36 @@ const judgmentsBody = {
 
 const annotationCases = [
   {
+    name: "project_update",
+    readOnly: false,
+    idempotent: true,
+    destructive: false,
+  },
+  {
+    name: "project_delete",
+    readOnly: false,
+    idempotent: true,
+    destructive: true,
+  },
+  {
+    name: "workstream_update",
+    readOnly: false,
+    idempotent: true,
+    destructive: false,
+  },
+  {
+    name: "workstream_merge",
+    readOnly: false,
+    idempotent: false,
+    destructive: true,
+  },
+  {
+    name: "judgment_get",
+    readOnly: true,
+    idempotent: true,
+    destructive: false,
+  },
+  {
     name: "project_list",
     readOnly: true,
     idempotent: true,
@@ -93,14 +123,19 @@ const annotationCases = [
 ];
 
 describe("tool definitions", () => {
-  it("registers exactly the ten tools in order", () => {
+  it("registers exactly the fifteen tools in order", () => {
     expect(tools.map((t) => t.definition.name)).toEqual([
       "project_list",
       "project_create",
       "project_context",
+      "project_update",
       "project_merge",
+      "project_delete",
+      "workstream_update",
+      "workstream_merge",
       "judgment_add",
       "judgment_search",
+      "judgment_get",
       "judgment_update",
       "judgment_discard",
       "work_principles_context",
@@ -144,6 +179,28 @@ describe("tool definitions", () => {
       "work_principles_hint",
     ]) {
       expect(description).toContain(phrase);
+    }
+  });
+
+  it("describes the rules of the editing tools", () => {
+    const expectations: Record<string, string[]> = {
+      project_delete: ["discarded ones included", "asked to delete it"],
+      workstream_merge: ["cannot be undone", "asked to merge"],
+      project_update: ["do not invent one"],
+      judgment_get: ["every field"],
+      judgment_update: [
+        "a kind you leave out keeps its names",
+        "may belong to another project",
+        "same shape as judgment_get",
+      ],
+      judgment_search: ["session_id narrows the results"],
+      judgment_add: ["daily_remaining", "retry_at"],
+    };
+    for (const [name, phrases] of Object.entries(expectations)) {
+      const { description } = byName(name).definition;
+      for (const phrase of phrases) {
+        expect(description, name).toContain(phrase);
+      }
     }
   });
 
@@ -483,8 +540,9 @@ describe("tool to API mapping", () => {
 
   it("validates the arguments of judgment_search and judgment_update", () => {
     const search = byName("judgment_search").definition;
-    expect(validateArgs(search, { project_id: 1 })).toBe("query is required");
+    expect(validateArgs(search, {})).toBe("project_id is required");
     expect(validateArgs(search, { project_id: 1, query: "a" })).toBeNull();
+    expect(validateArgs(search, { project_id: 1, session_id: "s" })).toBeNull();
     const update = byName("judgment_update").definition;
     expect(validateArgs(update, {})).toBe("judgment_id is required");
     expect(

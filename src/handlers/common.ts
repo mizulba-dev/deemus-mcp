@@ -18,17 +18,29 @@ export function failure(error: unknown): ToolResult {
   let code = "mcp_error";
   let message = error instanceof Error ? error.message : "Unknown error";
   let status: number | undefined;
+  let retryAt: string | undefined;
   if (error instanceof ApiError) {
     code = error.code;
     status = error.status;
+    retryAt = error.retryAt;
   } else if (error instanceof InvalidInputError) {
     code = "invalid_input";
   }
   return {
     structuredContent: {
-      error: { code, message, ...(status ? { status } : {}) },
+      error: {
+        code,
+        message,
+        ...(status ? { status } : {}),
+        ...(retryAt ? { retry_at: retryAt } : {}),
+      },
     },
-    content: [{ type: "text", text: `[${code}] ${message}` }],
+    content: [
+      {
+        type: "text",
+        text: `[${code}] ${message}${retryAt ? ` (retry_at: ${retryAt})` : ""}`,
+      },
+    ],
     isError: true,
   };
 }
@@ -60,4 +72,15 @@ export function pick(
     if (args && args[key] !== undefined) out[key] = args[key];
   }
   return out;
+}
+
+export function requireId(
+  args: Record<string, unknown> | undefined,
+  key: string,
+): string {
+  const id = requireString(args, key);
+  if (!/^[1-9][0-9]*$/.test(id)) {
+    throw new InvalidInputError(`${key} must be a positive integer`);
+  }
+  return id;
 }

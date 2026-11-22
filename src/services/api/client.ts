@@ -3,12 +3,19 @@ type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
+  readonly retryAt?: string;
 
-  constructor(message: string, status: number, code = "api_error") {
+  constructor(
+    message: string,
+    status: number,
+    code = "api_error",
+    retryAt?: string,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.retryAt = retryAt;
   }
 }
 
@@ -50,7 +57,7 @@ interface ApiConfig {
 function parseErrorBody(
   text: string,
   status: number,
-): { code: string; message: string } {
+): { code: string; message: string; retryAt?: string } {
   const fallback = {
     code: `http_${status}`,
     message: `HTTP error! status: ${status}`,
@@ -74,7 +81,9 @@ function parseErrorBody(
       : typeof record.error === "string"
         ? record.error
         : fallback.message;
-  return { code, message };
+  const retryAt =
+    typeof record.retry_at === "string" ? record.retry_at : undefined;
+  return { code, message, ...(retryAt ? { retryAt } : {}) };
 }
 
 export async function apiRequest<T = unknown>(
@@ -105,11 +114,11 @@ export async function apiRequest<T = unknown>(
   });
 
   if (!response.ok) {
-    const { code, message } = parseErrorBody(
+    const { code, message, retryAt } = parseErrorBody(
       await response.text(),
       response.status,
     );
-    throw new ApiError(message, response.status, code);
+    throw new ApiError(message, response.status, code, retryAt);
   }
 
   if (response.status === 204) {

@@ -23,6 +23,8 @@ export async function handleJudgmentUpdate(
         "outcome",
         "reason",
         "superseded_by_id",
+        "skills",
+        "workstream",
       ]),
     ),
   );

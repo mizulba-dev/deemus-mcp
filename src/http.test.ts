@@ -247,9 +247,14 @@ describe("HTTP MCP server", () => {
       "project_list",
       "project_create",
       "project_context",
+      "project_update",
       "project_merge",
+      "project_delete",
+      "workstream_update",
+      "workstream_merge",
       "judgment_add",
       "judgment_search",
+      "judgment_get",
       "judgment_update",
       "judgment_discard",
       "work_principles_context",
@@ -303,6 +308,99 @@ describe("HTTP MCP server", () => {
     expect(toolRequests).toHaveLength(1);
     expect(toolRequests[0].method).toBe("POST");
     expect(toolRequests[0].path).toBe("/api/v1/mcp/projects/7/judgments");
+  });
+
+  it("forwards retry_at when the judgment limit is reached", async () => {
+    api.respondWith((r) =>
+      r.path === "/api/v1/mcp/session"
+        ? undefined
+        : {
+            status: 429,
+            body: {
+              error: "limit reached",
+              code: "rate_limited",
+              retry_at: "2030-01-02T03:04:05Z",
+            },
+          },
+    );
+    const client = new Client({ name: "test", version: "0" });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(`${base}/mcp`), {
+        requestInit: { headers: { authorization: "Bearer oat_flow" } },
+      }),
+    );
+
+    const result = await client.callTool({
+      name: "judgment_add",
+      arguments: {
+        project_id: 7,
+        source: { tool: "claude-code" },
+        judgments: [],
+      },
+    });
+    await client.close();
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toEqual({
+      error: {
+        code: "rate_limited",
+        message: "limit reached",
+        status: 429,
+        retry_at: "2030-01-02T03:04:05Z",
+      },
+    });
+  });
+
+  it("calls the editing tools with the right method and path", async () => {
+    api.respondWith(() => ({ body: { ok: true } }));
+    const client = new Client({ name: "test", version: "0" });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(`${base}/mcp`), {
+        requestInit: { headers: { authorization: "Bearer oat_flow" } },
+      }),
+    );
+    const calls: [string, Record<string, unknown>][] = [
+      ["judgment_get", { judgment_id: 5 }],
+      [
+        "judgment_update",
+        {
+          judgment_id: 5,
+          skills: { tech: ["Go"] },
+          workstream: { project_id: 2, name: "W" },
+        },
+      ],
+      ["judgment_search", { project_id: 2, session_id: "s-1" }],
+      ["workstream_update", { workstream_id: 6, summary: "S", position: 1 }],
+      ["workstream_merge", { workstream_id: 6, into_workstream_id: 7 }],
+      ["project_update", { project_id: 8, summary: "S" }],
+      ["project_delete", { project_id: 8 }],
+    ];
+    for (const [name, args] of calls) {
+      const result = await client.callTool({ name, arguments: args });
+      expect(result.isError, name).toBeFalsy();
+    }
+    await client.close();
+
+    const toolRequests = api.requests
+      .filter((r) => r.path !== "/api/v1/mcp/session")
+      .map((r) => [r.method, r.path, r.body]);
+    expect(toolRequests).toEqual([
+      ["GET", "/api/v1/mcp/judgments/5", undefined],
+      [
+        "PATCH",
+        "/api/v1/mcp/judgments/5",
+        { skills: { tech: ["Go"] }, workstream: { project_id: 2, name: "W" } },
+      ],
+      [
+        "POST",
+        "/api/v1/mcp/projects/2/judgments/search",
+        { session_id: "s-1" },
+      ],
+      ["PATCH", "/api/v1/mcp/workstreams/6", { summary: "S" }],
+      ["POST", "/api/v1/mcp/workstreams/6/merge", { into_workstream_id: 7 }],
+      ["PATCH", "/api/v1/mcp/projects/8", { summary: "S" }],
+      ["DELETE", "/api/v1/mcp/projects/8", undefined],
+    ]);
   });
 
   it("calls judgment_discard with DELETE", async () => {

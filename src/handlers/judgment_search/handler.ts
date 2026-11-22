@@ -9,7 +9,7 @@ export async function handleJudgmentSearch(
   return run(async () =>
     apiClient.post(
       `/api/v1/mcp/projects/${requireProjectId(args)}/judgments/search`,
-      pick(args, ["query", "include_superseded", "limit"]),
+      pick(args, ["query", "session_id", "include_superseded", "limit"]),
     ),
   );
 }
