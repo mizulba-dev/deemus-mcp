@@ -30,14 +30,54 @@ const judgmentsBody = {
 };
 
 const annotationCases = [
-  { name: "project_list", readOnly: true, idempotent: true },
-  { name: "project_create", readOnly: false, idempotent: true },
-  { name: "project_context", readOnly: true, idempotent: true },
-  { name: "judgment_add", readOnly: false, idempotent: true },
-  { name: "judgment_search", readOnly: true, idempotent: true },
-  { name: "judgment_update", readOnly: false, idempotent: true },
-  { name: "work_principles_context", readOnly: true, idempotent: true },
-  { name: "work_principles_propose", readOnly: false, idempotent: false },
+  {
+    name: "project_list",
+    readOnly: true,
+    idempotent: true,
+    destructive: false,
+  },
+  {
+    name: "project_create",
+    readOnly: false,
+    idempotent: true,
+    destructive: false,
+  },
+  {
+    name: "project_context",
+    readOnly: true,
+    idempotent: true,
+    destructive: false,
+  },
+  {
+    name: "judgment_add",
+    readOnly: false,
+    idempotent: true,
+    destructive: false,
+  },
+  {
+    name: "judgment_search",
+    readOnly: true,
+    idempotent: true,
+    destructive: false,
+  },
+  {
+    name: "judgment_update",
+    readOnly: false,
+    idempotent: true,
+    destructive: true,
+  },
+  {
+    name: "work_principles_context",
+    readOnly: true,
+    idempotent: true,
+    destructive: false,
+  },
+  {
+    name: "work_principles_propose",
+    readOnly: false,
+    idempotent: false,
+    destructive: false,
+  },
 ];
 
 describe("tool definitions", () => {
@@ -55,12 +95,12 @@ describe("tool definitions", () => {
   });
 
   it.each(annotationCases)(
-    "annotates $name (readOnly=$readOnly, idempotent=$idempotent)",
-    ({ name, readOnly, idempotent }) => {
+    "annotates $name (readOnly=$readOnly, idempotent=$idempotent, destructive=$destructive)",
+    ({ name, readOnly, idempotent, destructive }) => {
       const { annotations } = byName(name).definition;
       expect(annotations?.readOnlyHint).toBe(readOnly);
       expect(annotations?.idempotentHint).toBe(idempotent);
-      expect(annotations?.destructiveHint).toBe(false);
+      expect(annotations?.destructiveHint).toBe(destructive);
       expect(annotations?.openWorldHint).toBe(false);
     },
   );
@@ -133,6 +173,10 @@ describe("tool definitions", () => {
     const update = byName("judgment_update").definition.description;
     for (const phrase of [
       "never fill outcome or reason in by guessing",
+      "title replaces the title",
+      "keys you leave out keep their values",
+      "reason and own_reason cannot be sent in detail",
+      "send [] to remove them",
       "own_reason",
       "delegated",
       "send null to undo it",

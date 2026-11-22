@@ -25,7 +25,7 @@ const READ_ONLY_TOOLS = new Set([
   "judgment_search",
   "work_principles_context",
 ]);
-const DESTRUCTIVE_TOOLS = new Set<string>();
+const DESTRUCTIVE_TOOLS = new Set<string>(["judgment_update"]);
 const IDEMPOTENT_TOOLS = new Set([
   "project_create",
   "judgment_add",

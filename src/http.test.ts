@@ -80,7 +80,9 @@ describe("HTTP MCP server", () => {
   it("redirects authorization server metadata to the API with 307", async () => {
     const response = await fetch(
       `${base}/.well-known/oauth-authorization-server`,
-      { redirect: "manual" },
+      {
+        redirect: "manual",
+      },
     );
 
     expect(response.status).toBe(307);
@@ -299,5 +301,40 @@ describe("HTTP MCP server", () => {
     expect(toolRequests).toHaveLength(1);
     expect(toolRequests[0].method).toBe("POST");
     expect(toolRequests[0].path).toBe("/api/v1/mcp/projects/7/judgments");
+  });
+
+  it("forwards the fields judgment_update can fix", async () => {
+    api.respondWith(() => ({ body: { judgment: { id: 9 } } }));
+    const client = new Client({ name: "test", version: "0" });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(`${base}/mcp`), {
+        requestInit: { headers: { authorization: "Bearer oat_flow" } },
+      }),
+    );
+
+    const result = await client.callTool({
+      name: "judgment_update",
+      arguments: {
+        judgment_id: 9,
+        title: "New title",
+        detail: { situation: "New situation" },
+        evidence: [],
+        unknown: "dropped",
+      },
+    });
+    await client.close();
+
+    expect(result.isError).toBeFalsy();
+    const toolRequests = api.requests.filter(
+      (r) => r.path !== "/api/v1/mcp/session",
+    );
+    expect(toolRequests).toHaveLength(1);
+    expect(toolRequests[0].method).toBe("PATCH");
+    expect(toolRequests[0].path).toBe("/api/v1/mcp/judgments/9");
+    expect(toolRequests[0].body).toEqual({
+      title: "New title",
+      detail: { situation: "New situation" },
+      evidence: [],
+    });
   });
 });

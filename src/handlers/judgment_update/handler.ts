@@ -16,7 +16,14 @@ export async function handleJudgmentUpdate(
   return run(async () =>
     apiClient.patch(
       `/api/v1/mcp/judgments/${requireJudgmentId(args)}`,
-      pick(args, ["outcome", "reason", "superseded_by_id"]),
+      pick(args, [
+        "title",
+        "detail",
+        "evidence",
+        "outcome",
+        "reason",
+        "superseded_by_id",
+      ]),
     ),
   );
 }

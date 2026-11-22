@@ -8,6 +8,33 @@ const DETAIL_DESCRIPTION =
   "delegated: request (required), why_needed (optional), conditions (optional), verified (optional), ai_decisions (up to 10 strings of 1-300 characters). " +
   "Leave an optional key empty or omit it when the record does not state it.";
 
+export const DETAIL_PROPERTIES = {
+  situation: { type: "string" },
+  options: {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        label: { type: "string" },
+        by_ai: { type: "boolean" },
+        adopted: { type: "boolean" },
+      },
+      required: ["label"],
+    },
+  },
+  decision: { type: "string" },
+  reason: { type: "string" },
+  hard_part: { type: "string" },
+  ai_proposal: { type: "string" },
+  ai_reason: { type: "string" },
+  own_reason: { type: "string" },
+  request: { type: "string" },
+  why_needed: { type: "string" },
+  conditions: { type: "string" },
+  verified: { type: "string" },
+  ai_decisions: { type: "array", items: { type: "string" } },
+};
+
 export const judgmentAddTool: ToolHandler = {
   definition: {
     name: "judgment_add",
@@ -79,32 +106,7 @@ export const judgmentAddTool: ToolHandler = {
               detail: {
                 type: "object",
                 description: DETAIL_DESCRIPTION,
-                properties: {
-                  situation: { type: "string" },
-                  options: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        label: { type: "string" },
-                        by_ai: { type: "boolean" },
-                        adopted: { type: "boolean" },
-                      },
-                      required: ["label"],
-                    },
-                  },
-                  decision: { type: "string" },
-                  reason: { type: "string" },
-                  hard_part: { type: "string" },
-                  ai_proposal: { type: "string" },
-                  ai_reason: { type: "string" },
-                  own_reason: { type: "string" },
-                  request: { type: "string" },
-                  why_needed: { type: "string" },
-                  conditions: { type: "string" },
-                  verified: { type: "string" },
-                  ai_decisions: { type: "array", items: { type: "string" } },
-                },
+                properties: DETAIL_PROPERTIES,
               },
               outcome: {
                 type: "string",
