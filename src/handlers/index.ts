@@ -13,3 +13,8 @@ export * from "./workstream_update/index.js";
 export * from "./workstream_merge/index.js";
 export * from "./project_update/index.js";
 export * from "./project_delete/index.js";
+export * from "./skill_list/index.js";
+export * from "./skill_add/index.js";
+export * from "./skill_update/index.js";
+export * from "./skill_merge/index.js";
+export * from "./skill_suggestion_discard/index.js";

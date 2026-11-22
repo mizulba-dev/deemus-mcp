@@ -257,6 +257,11 @@ describe("HTTP MCP server", () => {
       "judgment_get",
       "judgment_update",
       "judgment_discard",
+      "skill_list",
+      "skill_add",
+      "skill_update",
+      "skill_merge",
+      "skill_suggestion_discard",
       "work_principles_context",
       "work_principles_propose",
     ]);
@@ -374,6 +379,11 @@ describe("HTTP MCP server", () => {
       ["workstream_merge", { workstream_id: 6, into_workstream_id: 7 }],
       ["project_update", { project_id: 8, summary: "S" }],
       ["project_delete", { project_id: 8 }],
+      ["skill_list", {}],
+      ["skill_add", { kind: "tech", name: "Elixir", extra: 1 }],
+      ["skill_update", { skill_id: 3, hidden: true }],
+      ["skill_merge", { skill_id: 3, into_skill_id: 4 }],
+      ["skill_suggestion_discard", { name: "X" }],
     ];
     for (const [name, args] of calls) {
       const result = await client.callTool({ name, arguments: args });
@@ -400,6 +410,11 @@ describe("HTTP MCP server", () => {
       ["POST", "/api/v1/mcp/workstreams/6/merge", { into_workstream_id: 7 }],
       ["PATCH", "/api/v1/mcp/projects/8", { summary: "S" }],
       ["DELETE", "/api/v1/mcp/projects/8", undefined],
+      ["GET", "/api/v1/mcp/skills", undefined],
+      ["POST", "/api/v1/mcp/skills", { kind: "tech", name: "Elixir" }],
+      ["PATCH", "/api/v1/mcp/skills/3", { hidden: true }],
+      ["POST", "/api/v1/mcp/skills/3/merge", { into_skill_id: 4 }],
+      ["POST", "/api/v1/mcp/skills/suggestions/discard", { name: "X" }],
     ]);
   });
 

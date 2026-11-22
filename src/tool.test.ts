@@ -30,6 +30,26 @@ const judgmentsBody = {
 };
 
 const annotationCases = [
+  { name: "skill_list", readOnly: true, idempotent: true, destructive: false },
+  { name: "skill_add", readOnly: false, idempotent: true, destructive: false },
+  {
+    name: "skill_update",
+    readOnly: false,
+    idempotent: true,
+    destructive: false,
+  },
+  {
+    name: "skill_merge",
+    readOnly: false,
+    idempotent: false,
+    destructive: true,
+  },
+  {
+    name: "skill_suggestion_discard",
+    readOnly: false,
+    idempotent: true,
+    destructive: true,
+  },
   {
     name: "project_update",
     readOnly: false,
@@ -123,7 +143,7 @@ const annotationCases = [
 ];
 
 describe("tool definitions", () => {
-  it("registers exactly the fifteen tools in order", () => {
+  it("registers exactly the twenty tools in order", () => {
     expect(tools.map((t) => t.definition.name)).toEqual([
       "project_list",
       "project_create",
@@ -138,6 +158,11 @@ describe("tool definitions", () => {
       "judgment_get",
       "judgment_update",
       "judgment_discard",
+      "skill_list",
+      "skill_add",
+      "skill_update",
+      "skill_merge",
+      "skill_suggestion_discard",
       "work_principles_context",
       "work_principles_propose",
     ]);
@@ -185,6 +210,12 @@ describe("tool definitions", () => {
   it("describes the rules of the editing tools", () => {
     const expectations: Record<string, string[]> = {
       project_delete: ["discarded ones included", "asked to delete it"],
+      skill_add: [
+        "only when the user asked to add that name",
+        "linked_judgments",
+      ],
+      skill_merge: ["cannot be undone", "asked to merge"],
+      skill_suggestion_discard: ["decided not to add that name"],
       workstream_merge: ["cannot be undone", "asked to merge"],
       project_update: ["do not invent one"],
       judgment_get: ["every field"],

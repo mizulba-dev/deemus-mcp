@@ -7,6 +7,11 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { createApiClient } from "./services/api/index.js";
 import {
+  skillAddTool,
+  skillListTool,
+  skillMergeTool,
+  skillSuggestionDiscardTool,
+  skillUpdateTool,
   judgmentGetTool,
   projectDeleteTool,
   projectUpdateTool,
@@ -31,12 +36,15 @@ const READ_ONLY_TOOLS = new Set([
   "project_context",
   "judgment_search",
   "judgment_get",
+  "skill_list",
   "work_principles_context",
 ]);
 const DESTRUCTIVE_TOOLS = new Set<string>([
   "project_merge",
   "project_delete",
   "workstream_merge",
+  "skill_merge",
+  "skill_suggestion_discard",
   "judgment_update",
   "judgment_discard",
 ]);
@@ -45,6 +53,9 @@ const IDEMPOTENT_TOOLS = new Set([
   "project_update",
   "project_delete",
   "workstream_update",
+  "skill_add",
+  "skill_update",
+  "skill_suggestion_discard",
   "judgment_add",
   "judgment_update",
   "judgment_discard",
@@ -60,6 +71,11 @@ const TOOL_TITLES: Record<string, string> = {
   workstream_update: "Update a workstream",
   workstream_merge: "Merge workstreams",
   judgment_get: "Get a judgment",
+  skill_list: "List skills",
+  skill_add: "Add a skill",
+  skill_update: "Update a skill",
+  skill_merge: "Merge skills",
+  skill_suggestion_discard: "Discard a skill suggestion",
   judgment_add: "Add judgments",
   judgment_search: "Search judgments",
   judgment_update: "Update a judgment",
@@ -104,6 +120,11 @@ export function getRegisteredTools(): ToolHandler[] {
     judgmentGetTool,
     judgmentUpdateTool,
     judgmentDiscardTool,
+    skillListTool,
+    skillAddTool,
+    skillUpdateTool,
+    skillMergeTool,
+    skillSuggestionDiscardTool,
     workPrinciplesContextTool,
     workPrinciplesProposeTool,
   ].map(withToolAnnotations);

@@ -15,7 +15,8 @@ language too.
 ## Tools
 
 This skill uses the Deemus MCP tools whose names end in `project_list`,
-`project_create`, `project_context`, `judgment_search` and `judgment_add`. The prefix in front of
+`project_create`, `project_context`, `judgment_search` and `judgment_add`, and
+`skill_add` when the user asks to add a skill name. The prefix in front of
 the name depends on how the server was connected; match on the end of the name
 only.
 
@@ -212,6 +213,9 @@ report.
 - `skills.tech`: names from the list. If a technology clearly used in the
   judgment is not in the list, you may still send its name; it is kept as a
   suggestion. Keep track of such names and report them to the user at the end.
+  If the user asks to add one to the list, add it with `skill_add`; the
+  judgments that carry it are linked at the same time. Do not add names the
+  user did not ask for.
 
 ### Secrets and personal information
 
