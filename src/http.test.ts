@@ -269,6 +269,8 @@ describe("HTTP MCP server", () => {
       "work_principles_update",
       "work_principles_adopt",
       "work_principles_discard",
+      "publish_context",
+      "publish_suggest",
     ]);
 
     const result = await client.callTool({
@@ -394,6 +396,11 @@ describe("HTTP MCP server", () => {
       ["work_principles_update", { principle_id: 9, title: "T" }],
       ["work_principles_adopt", { principle_id: 9 }],
       ["work_principles_discard", { principle_id: 9 }],
+      ["publish_context", { before_id: 3 }],
+      [
+        "publish_suggest",
+        { judgments: [{ id: 5, reason: "R" }], projects: [], extra: 1 },
+      ],
     ];
     for (const [name, args] of calls) {
       const result = await client.callTool({ name, arguments: args });
@@ -438,6 +445,12 @@ describe("HTTP MCP server", () => {
       ["PATCH", "/api/v1/mcp/work-principles/9", { title: "T" }],
       ["POST", "/api/v1/mcp/work-principles/9/adopt", {}],
       ["DELETE", "/api/v1/mcp/work-principles/9", undefined],
+      ["GET", "/api/v1/mcp/publish/context?before_id=3", undefined],
+      [
+        "POST",
+        "/api/v1/mcp/publish/suggestions",
+        { judgments: [{ id: 5, reason: "R" }], projects: [] },
+      ],
     ]);
   });
 

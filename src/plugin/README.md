@@ -34,6 +34,10 @@ Ask the AI to "set the scope of my judgments in Deemus". The `scope` skill reads
 
 Ask the AI to "sum up my work principles in Deemus". The `work-principles` skill reads your recorded judgments and proposes the criteria that run through judgments made in different situations, each backed by those judgments. Adopt the ones you agree with in Deemus.
 
+## Get suggestions of what to show
+
+Ask the AI to "suggest what to show on my page in Deemus". The `publish-prep` skill reads your projects and judgments and sends suggestions of which ones to show and which to highlight, each with a reason. Adopt or turn down each suggestion in Deemus; the AI changes no mark, and you update the page yourself.
+
 ### Record and look back automatically in Claude Code and Codex
 
 Paste this into your global rules (`~/.claude/CLAUDE.md` for Claude Code, `~/.codex/AGENTS.md` for Codex):

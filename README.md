@@ -33,10 +33,14 @@ The server speaks Streamable HTTP (stateless, `POST /mcp`) and forwards the clie
 | `work_principles_update`   | Rewrite the title, body or area of a work principle when you ask.                                                                           |
 | `work_principles_adopt`    | Adopt a candidate work principle when you ask, optionally rewording it in the same call.                                                    |
 | `work_principles_discard`  | Delete a candidate or adopted work principle when you ask.                                                                                  |
+| `publish_context`          | Get your projects and the judgments that could be suggested to show on your page, when you ask.                                             |
+| `publish_suggest`          | Send suggestions of what to show, in one call; you adopt or turn down each one in Deemus. Nothing is shown by the call.                     |
 
 Call `project_context` before `judgment_add`, and pick each judgment's workstream from the returned list. If `judgment_add` returns `needs_workstream_choice`, choose from the candidates and resend only that judgment.
 
 To sum up your work principles, call `work_principles_context`, then send criteria that run through judgments from different situations with `work_principles_propose`. The user adopts them in Deemus, or asks the AI to rewrite, adopt or delete them with `work_principles_update`, `work_principles_adopt` and `work_principles_discard`.
+
+To get suggestions of what to show on your page, ask the AI; it reads `publish_context` and sends them in one call with `publish_suggest`. You adopt or turn down each one in Deemus, and the call changes no mark.
 
 ## Development
 

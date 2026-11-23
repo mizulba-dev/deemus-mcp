@@ -32,6 +32,8 @@ import {
   workPrinciplesUpdateTool,
   workPrinciplesAdoptTool,
   workPrinciplesDiscardTool,
+  publishContextTool,
+  publishSuggestTool,
 } from "./handlers/index.js";
 import { InvalidInputError, failure } from "./handlers/common.js";
 import type { ToolDefinition, ToolHandler } from "./schemas/tool.js";
@@ -44,6 +46,7 @@ const READ_ONLY_TOOLS = new Set([
   "judgment_scope_list",
   "skill_list",
   "work_principles_context",
+  "publish_context",
 ]);
 const DESTRUCTIVE_TOOLS = new Set<string>([
   "project_merge",
@@ -98,6 +101,8 @@ const TOOL_TITLES: Record<string, string> = {
   work_principles_update: "Update a work principle",
   work_principles_adopt: "Adopt a work principle",
   work_principles_discard: "Delete a work principle",
+  publish_context: "Get suggestion context",
+  publish_suggest: "Suggest what to show",
 };
 
 function withToolAnnotations(tool: ToolHandler): ToolHandler {
@@ -148,6 +153,8 @@ export function getRegisteredTools(): ToolHandler[] {
     workPrinciplesUpdateTool,
     workPrinciplesAdoptTool,
     workPrinciplesDiscardTool,
+    publishContextTool,
+    publishSuggestTool,
   ].map(withToolAnnotations);
 }
 

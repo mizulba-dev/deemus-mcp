@@ -170,10 +170,22 @@ const annotationCases = [
     idempotent: true,
     destructive: true,
   },
+  {
+    name: "publish_context",
+    readOnly: true,
+    idempotent: true,
+    destructive: false,
+  },
+  {
+    name: "publish_suggest",
+    readOnly: false,
+    idempotent: false,
+    destructive: false,
+  },
 ];
 
 describe("tool definitions", () => {
-  it("registers exactly the twenty-five tools in order", () => {
+  it("registers exactly the twenty-seven tools in order", () => {
     expect(tools.map((t) => t.definition.name)).toEqual([
       "project_list",
       "project_create",
@@ -200,6 +212,8 @@ describe("tool definitions", () => {
       "work_principles_update",
       "work_principles_adopt",
       "work_principles_discard",
+      "publish_context",
+      "publish_suggest",
     ]);
   });
 
@@ -340,6 +354,42 @@ describe("tool definitions", () => {
     ]) {
       expect(description).toContain(phrase);
     }
+  });
+
+  it("describes publish_context", () => {
+    const { description } = byName("publish_context").definition;
+    for (const phrase of [
+      "only when the user asked you to suggest",
+      "up to 50 per call",
+      "needs_reason (",
+      "previously (null, adopted or dismissed",
+      "Only the first call (without before_id)",
+      "next_before_id",
+      "delegated judgments are left out",
+    ]) {
+      expect(description).toContain(phrase);
+    }
+  });
+
+  it("describes the rules of publish_suggest", () => {
+    const { description, inputSchema } = byName("publish_suggest").definition;
+    for (const phrase of [
+      "only when the user asked you to suggest",
+      "never after recording or on your own",
+      "publish_context first",
+      "read every page",
+      "Send everything in one call",
+      "replaced by this call",
+      "1 to 200 characters",
+      "Do not guess a reason",
+      "changes no mark and shows nothing",
+      "skip_reason",
+      "pending_count",
+      "secrets",
+    ]) {
+      expect(description).toContain(phrase);
+    }
+    expect(inputSchema.required).toEqual(["judgments", "projects"]);
   });
 
   it("describes the rules of the work principle editing tools", () => {
@@ -768,6 +818,72 @@ describe("tool to API mapping", () => {
       expect(result.isError).toBe(true);
     }
     expect(api.requests).toHaveLength(0);
+  });
+
+  it("publish_context -> GET /api/v1/mcp/publish/context", async () => {
+    const client = createApiClient(api.url, "oat_t");
+
+    const result = await byName("publish_context").handler({}, client);
+
+    expect(result.isError).toBeFalsy();
+    expect(api.requests).toHaveLength(1);
+    expect(api.requests[0].method).toBe("GET");
+    expect(api.requests[0].path).toBe("/api/v1/mcp/publish/context");
+  });
+
+  it("publish_context with before_id -> GET ?before_id=", async () => {
+    const client = createApiClient(api.url, "oat_t");
+
+    const result = await byName("publish_context").handler(
+      { before_id: 42 },
+      client,
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(api.requests[0].path).toBe(
+      "/api/v1/mcp/publish/context?before_id=42",
+    );
+  });
+
+  it("publish_context rejects a before_id that is not a positive integer", async () => {
+    const client = createApiClient(api.url, "oat_t");
+
+    for (const before_id of [0, -1, 1.5, "42"]) {
+      const result = await byName("publish_context").handler(
+        { before_id },
+        client,
+      );
+      expect(result.isError).toBe(true);
+    }
+    expect(api.requests).toHaveLength(0);
+  });
+
+  it("publish_suggest -> POST /api/v1/mcp/publish/suggestions with judgments and projects only", async () => {
+    const response = {
+      results: { judgments: [{ id: 4, status: "saved" }], projects: [] },
+      pending_count: 1,
+    };
+    api.respondWith(() => ({ body: response }));
+    const client = createApiClient(api.url, "oat_t");
+    const judgments = [{ id: 4, highlight: true, reason: "Chose X over Y." }];
+
+    const result = await byName("publish_suggest").handler(
+      { judgments, projects: [], ignored: "x" },
+      client,
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual(response);
+    expect(api.requests).toHaveLength(1);
+    expect(api.requests[0].method).toBe("POST");
+    expect(api.requests[0].path).toBe("/api/v1/mcp/publish/suggestions");
+    expect(api.requests[0].body).toEqual({ judgments, projects: [] });
+  });
+
+  it("publish_suggest requires judgments and projects", () => {
+    const def = byName("publish_suggest").definition;
+    expect(validateArgs(def, {})).toBe("judgments is required");
+    expect(validateArgs(def, { judgments: [] })).toBe("projects is required");
   });
 
   it("judgment_update sends scope", async () => {
