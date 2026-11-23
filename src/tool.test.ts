@@ -282,6 +282,7 @@ describe("tool definitions", () => {
       "next_before_id",
       "up to 50 per call",
       "Only the first call (without before_id)",
+      "project_kind (work or personal)",
       "later calls leave principles out",
     ]) {
       expect(description).toContain(phrase);
@@ -296,6 +297,11 @@ describe("tool definitions", () => {
       "candidates empty",
       "2 to 10 judgment ids",
       "show adopted ones to other people",
+      "the purpose it serves",
+      "premise",
+      "cutting corners",
+      "same purpose as one candidate",
+      "premise only from what the judgments show",
       "prioritize A over B",
       "when ..., choose ...",
       "how to operate or instruct the AI",
