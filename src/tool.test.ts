@@ -280,6 +280,9 @@ describe("tool definitions", () => {
       "decision (",
       "rejected_options (",
       "next_before_id",
+      "up to 50 per call",
+      "Only the first call (without before_id)",
+      "later calls leave principles out",
     ]) {
       expect(description).toContain(phrase);
     }

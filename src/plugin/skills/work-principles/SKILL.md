@@ -30,9 +30,10 @@ connected and stop.
 
 1. Call `work_principles_context`. It returns `judgments` (id, title,
    involvement, project, workstream, decided_on, situation_or_request,
-   decision, rejected_options, reason; 10 per call, newest first),
-   `principles` (the user's existing ones), `new_judgments` and
-   `next_before_id`. Only judgments that set a direction are included:
+   decision, rejected_options, reason; up to 50 per call, fewer when they are long, newest first),
+   `new_judgments` and `next_before_id`. Only the first call (without
+   `before_id`) also returns `principles` (the user's existing ones); read
+   them from that response. Only judgments that set a direction are included:
    delegated judgments, choices that held only for one piece of work, and
    records with neither options nor a reason are left out. While
    `next_before_id` is not null, call it again with `before_id` set to that
