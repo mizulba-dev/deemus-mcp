@@ -8,7 +8,7 @@ export async function handleWorkPrinciplesUpdate(
   return run(async () =>
     apiClient.patch(
       `/api/v1/mcp/work-principles/${requireId(args, "principle_id")}`,
-      pick(args, ["title", "body"]),
+      pick(args, ["title", "body", "area"]),
     ),
   );
 }

@@ -15,6 +15,7 @@ export const workPrinciplesProposeTool: ToolHandler = {
       "Do not propose how to operate or instruct the AI, rules the user has to follow, or confirmation procedures and checklists. " +
       "5) Do not propose what the user already has in principles. " +
       "6) Results are independent per candidate and keep the order of the input: saved, duplicate (the same title already exists; nothing saved) or invalid (see errors). " +
+      "Deemus sets the area of each saved candidate from the domain skills of its evidence judgments; do not send one. " +
       "7) Do not write secrets (keys, tokens, passwords) or personal information.",
     inputSchema: {
       type: "object",

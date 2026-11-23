@@ -305,6 +305,7 @@ describe("tool definitions", () => {
       "Only the first call (without before_id)",
       "project_kind (work or personal)",
       "later calls leave principles out",
+      "area (the name of the domain skill it is grouped by, or null)",
     ]) {
       expect(description).toContain(phrase);
     }
@@ -334,6 +335,8 @@ describe("tool definitions", () => {
       "duplicate",
       "invalid",
       "secrets",
+      "Deemus sets the area of each saved candidate",
+      "do not send one",
     ]) {
       expect(description).toContain(phrase);
     }
@@ -347,6 +350,9 @@ describe("tool definitions", () => {
         "a field you leave out keeps its value",
         "cuts body at 300 characters",
         "first work_principles_context response",
+        "only when the user asked to change the area",
+        "only a domain skill name the user has",
+        "nothing changes, so tell the user the error",
       ],
       work_principles_adopt: [
         "only when the user asked to adopt it",
@@ -895,6 +901,20 @@ describe("tool to API mapping", () => {
       "PATCH",
       "/api/v1/mcp/work-principles/7",
       { body: "B" },
+    ],
+    [
+      "work_principles_update",
+      { principle_id: 7, area: "Design" },
+      "PATCH",
+      "/api/v1/mcp/work-principles/7",
+      { area: "Design" },
+    ],
+    [
+      "work_principles_update",
+      { principle_id: 7, area: null },
+      "PATCH",
+      "/api/v1/mcp/work-principles/7",
+      { area: null },
     ],
     [
       "work_principles_adopt",

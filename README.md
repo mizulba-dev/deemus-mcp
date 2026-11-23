@@ -30,7 +30,7 @@ The server speaks Streamable HTTP (stateless, `POST /mcp`) and forwards the clie
 | `skill_suggestion_discard` | Drop a suggested name without adding it.                                                                                                    |
 | `work_principles_context`  | Get your judgments that set a direction (with what you chose and what you passed over) and existing work principles.                        |
 | `work_principles_propose`  | Send up to 5 work principle candidates, each backed by 2 to 10 judgments.                                                                   |
-| `work_principles_update`   | Rewrite the title or body of a work principle when you ask.                                                                                 |
+| `work_principles_update`   | Rewrite the title, body or area of a work principle when you ask.                                                                           |
 | `work_principles_adopt`    | Adopt a candidate work principle when you ask, optionally rewording it in the same call.                                                    |
 | `work_principles_discard`  | Delete a candidate or adopted work principle when you ask.                                                                                  |
 
