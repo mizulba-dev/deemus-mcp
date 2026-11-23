@@ -26,6 +26,13 @@ how the server was connected; match on the end of the name only.
 If neither tool is available, tell the user that the Deemus MCP server is not
 connected and stop.
 
+When the user asks to drop, adopt or rewrite principles they already have,
+use the tools ending in `work_principles_discard`, `work_principles_adopt`
+and `work_principles_update`, and only on the principles the user named. Take
+the ids from `principles` in the first `work_principles_context` response.
+Before summing up again, ask the user whether to drop any existing
+candidates; do not drop them on your own.
+
 ## Steps
 
 1. Call `work_principles_context`. It returns `judgments` (id, title,

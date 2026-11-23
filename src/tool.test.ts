@@ -152,10 +152,28 @@ const annotationCases = [
     idempotent: false,
     destructive: false,
   },
+  {
+    name: "work_principles_update",
+    readOnly: false,
+    idempotent: true,
+    destructive: true,
+  },
+  {
+    name: "work_principles_adopt",
+    readOnly: false,
+    idempotent: false,
+    destructive: false,
+  },
+  {
+    name: "work_principles_discard",
+    readOnly: false,
+    idempotent: true,
+    destructive: true,
+  },
 ];
 
 describe("tool definitions", () => {
-  it("registers exactly the twenty-two tools in order", () => {
+  it("registers exactly the twenty-five tools in order", () => {
     expect(tools.map((t) => t.definition.name)).toEqual([
       "project_list",
       "project_create",
@@ -179,6 +197,9 @@ describe("tool definitions", () => {
       "skill_suggestion_discard",
       "work_principles_context",
       "work_principles_propose",
+      "work_principles_update",
+      "work_principles_adopt",
+      "work_principles_discard",
     ]);
   });
 
@@ -315,6 +336,41 @@ describe("tool definitions", () => {
       "secrets",
     ]) {
       expect(description).toContain(phrase);
+    }
+  });
+
+  it("describes the rules of the work principle editing tools", () => {
+    const expectations: Record<string, string[]> = {
+      work_principles_update: [
+        "only when the user asked to rewrite it",
+        "never on your own judgment",
+        "a field you leave out keeps its value",
+        "cuts body at 300 characters",
+        "first work_principles_context response",
+      ],
+      work_principles_adopt: [
+        "only when the user asked to adopt it",
+        "never on your own judgment",
+        "send title and body with this call",
+        "a field you leave out keeps its value",
+        "nothing changes, the wording included",
+        "conflict",
+        "first work_principles_context response",
+      ],
+      work_principles_discard: [
+        "only when the user asked to drop or delete it",
+        "never on your own judgment",
+        "cannot be undone",
+        "the next time the user updates that page",
+        "first work_principles_context response",
+      ],
+    };
+    for (const [name, phrases] of Object.entries(expectations)) {
+      const { description, inputSchema } = byName(name).definition;
+      expect(inputSchema.required, name).toEqual(["principle_id"]);
+      for (const phrase of phrases) {
+        expect(description, name).toContain(phrase);
+      }
     }
   });
 
@@ -823,6 +879,94 @@ describe("tool to API mapping", () => {
     expect(api.requests[0].method).toBe("POST");
     expect(api.requests[0].path).toBe("/api/v1/mcp/work-principles");
     expect(api.requests[0].body).toEqual({ candidates });
+  });
+
+  it.each([
+    [
+      "work_principles_update",
+      { principle_id: 7, title: "T", body: "", ignored: "x" },
+      "PATCH",
+      "/api/v1/mcp/work-principles/7",
+      { title: "T", body: "" },
+    ],
+    [
+      "work_principles_update",
+      { principle_id: 7, body: "B" },
+      "PATCH",
+      "/api/v1/mcp/work-principles/7",
+      { body: "B" },
+    ],
+    [
+      "work_principles_adopt",
+      { principle_id: 7, title: "T", body: "B", ignored: "x" },
+      "POST",
+      "/api/v1/mcp/work-principles/7/adopt",
+      { title: "T", body: "B" },
+    ],
+    [
+      "work_principles_adopt",
+      { principle_id: 7 },
+      "POST",
+      "/api/v1/mcp/work-principles/7/adopt",
+      {},
+    ],
+    [
+      "work_principles_discard",
+      { principle_id: 7 },
+      "DELETE",
+      "/api/v1/mcp/work-principles/7",
+      undefined,
+    ],
+  ])("%s %j -> %s %s", async (name, args, method, path, body) => {
+    const client = createApiClient(api.url, "oat_t");
+
+    const result = await byName(name).handler(args, client);
+
+    expect(result.isError).toBeFalsy();
+    expect(api.requests).toHaveLength(1);
+    expect(api.requests[0].method).toBe(method);
+    expect(api.requests[0].path).toBe(path);
+    expect(api.requests[0].body).toEqual(body);
+  });
+
+  it.each([
+    "work_principles_update",
+    "work_principles_adopt",
+    "work_principles_discard",
+  ])("%s rejects a missing or malformed principle_id", async (name) => {
+    const client = createApiClient(api.url, "oat_t");
+
+    for (const args of [
+      {},
+      { principle_id: 0 },
+      { principle_id: "../7" },
+      { principle_id: 1.5 },
+    ]) {
+      const result = await byName(name).handler(args, client);
+      expect(result.isError, JSON.stringify(args)).toBe(true);
+      expect((result.structuredContent?.error as { code: string }).code).toBe(
+        "invalid_input",
+      );
+    }
+    expect(api.requests).toHaveLength(0);
+  });
+
+  it("formats a conflict error from work_principles_adopt", async () => {
+    api.respondWith(() => ({
+      status: 409,
+      body: { error: "not a candidate", code: "conflict" },
+    }));
+    const client = createApiClient(api.url, "oat_t");
+
+    const result = await byName("work_principles_adopt").handler(
+      { principle_id: 7 },
+      client,
+    );
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toEqual({
+      error: { code: "conflict", message: "not a candidate", status: 409 },
+    });
   });
 
   it("requires candidates for work_principles_propose", () => {

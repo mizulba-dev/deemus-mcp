@@ -266,6 +266,9 @@ describe("HTTP MCP server", () => {
       "skill_suggestion_discard",
       "work_principles_context",
       "work_principles_propose",
+      "work_principles_update",
+      "work_principles_adopt",
+      "work_principles_discard",
     ]);
 
     const result = await client.callTool({
@@ -388,6 +391,9 @@ describe("HTTP MCP server", () => {
       ["skill_update", { skill_id: 3, hidden: true }],
       ["skill_merge", { skill_id: 3, into_skill_id: 4 }],
       ["skill_suggestion_discard", { name: "X" }],
+      ["work_principles_update", { principle_id: 9, title: "T" }],
+      ["work_principles_adopt", { principle_id: 9 }],
+      ["work_principles_discard", { principle_id: 9 }],
     ];
     for (const [name, args] of calls) {
       const result = await client.callTool({ name, arguments: args });
@@ -429,6 +435,9 @@ describe("HTTP MCP server", () => {
       ["PATCH", "/api/v1/mcp/skills/3", { hidden: true }],
       ["POST", "/api/v1/mcp/skills/3/merge", { into_skill_id: 4 }],
       ["POST", "/api/v1/mcp/skills/suggestions/discard", { name: "X" }],
+      ["PATCH", "/api/v1/mcp/work-principles/9", { title: "T" }],
+      ["POST", "/api/v1/mcp/work-principles/9/adopt", {}],
+      ["DELETE", "/api/v1/mcp/work-principles/9", undefined],
     ]);
   });
 

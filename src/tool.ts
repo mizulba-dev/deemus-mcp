@@ -29,6 +29,9 @@ import {
   projectMergeTool,
   workPrinciplesContextTool,
   workPrinciplesProposeTool,
+  workPrinciplesUpdateTool,
+  workPrinciplesAdoptTool,
+  workPrinciplesDiscardTool,
 } from "./handlers/index.js";
 import { InvalidInputError, failure } from "./handlers/common.js";
 import type { ToolDefinition, ToolHandler } from "./schemas/tool.js";
@@ -50,6 +53,8 @@ const DESTRUCTIVE_TOOLS = new Set<string>([
   "skill_suggestion_discard",
   "judgment_update",
   "judgment_discard",
+  "work_principles_update",
+  "work_principles_discard",
 ]);
 const IDEMPOTENT_TOOLS = new Set([
   "project_create",
@@ -63,6 +68,8 @@ const IDEMPOTENT_TOOLS = new Set([
   "judgment_update",
   "judgment_discard",
   "judgment_scope_set",
+  "work_principles_update",
+  "work_principles_discard",
 ]);
 
 const TOOL_TITLES: Record<string, string> = {
@@ -88,6 +95,9 @@ const TOOL_TITLES: Record<string, string> = {
   judgment_scope_set: "Set the scope of judgments",
   work_principles_context: "Get work principles context",
   work_principles_propose: "Propose work principles",
+  work_principles_update: "Update a work principle",
+  work_principles_adopt: "Adopt a work principle",
+  work_principles_discard: "Delete a work principle",
 };
 
 function withToolAnnotations(tool: ToolHandler): ToolHandler {
@@ -135,6 +145,9 @@ export function getRegisteredTools(): ToolHandler[] {
     skillSuggestionDiscardTool,
     workPrinciplesContextTool,
     workPrinciplesProposeTool,
+    workPrinciplesUpdateTool,
+    workPrinciplesAdoptTool,
+    workPrinciplesDiscardTool,
   ].map(withToolAnnotations);
 }
 
