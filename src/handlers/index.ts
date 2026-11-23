@@ -10,6 +10,7 @@ export * from "./work_principles_adopt/index.js";
 export * from "./work_principles_discard/index.js";
 export * from "./publish_context/index.js";
 export * from "./publish_suggest/index.js";
+export * from "./publish_page_get/index.js";
 export * from "./judgment_search/index.js";
 export * from "./judgment_update/index.js";
 export * from "./judgment_discard/index.js";

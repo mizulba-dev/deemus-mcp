@@ -34,6 +34,7 @@ import {
   workPrinciplesDiscardTool,
   publishContextTool,
   publishSuggestTool,
+  publishPageGetTool,
 } from "./handlers/index.js";
 import { InvalidInputError, failure } from "./handlers/common.js";
 import type { ToolDefinition, ToolHandler } from "./schemas/tool.js";
@@ -47,6 +48,7 @@ const READ_ONLY_TOOLS = new Set([
   "skill_list",
   "work_principles_context",
   "publish_context",
+  "publish_page_get",
 ]);
 const DESTRUCTIVE_TOOLS = new Set<string>([
   "project_merge",
@@ -103,6 +105,7 @@ const TOOL_TITLES: Record<string, string> = {
   work_principles_discard: "Delete a work principle",
   publish_context: "Get suggestion context",
   publish_suggest: "Suggest what to show",
+  publish_page_get: "Get your page",
 };
 
 function withToolAnnotations(tool: ToolHandler): ToolHandler {
@@ -155,6 +158,7 @@ export function getRegisteredTools(): ToolHandler[] {
     workPrinciplesDiscardTool,
     publishContextTool,
     publishSuggestTool,
+    publishPageGetTool,
   ].map(withToolAnnotations);
 }
 

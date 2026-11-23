@@ -271,6 +271,7 @@ describe("HTTP MCP server", () => {
       "work_principles_discard",
       "publish_context",
       "publish_suggest",
+      "publish_page_get",
     ]);
 
     const result = await client.callTool({

@@ -182,10 +182,16 @@ const annotationCases = [
     idempotent: false,
     destructive: false,
   },
+  {
+    name: "publish_page_get",
+    readOnly: true,
+    idempotent: true,
+    destructive: false,
+  },
 ];
 
 describe("tool definitions", () => {
-  it("registers exactly the twenty-seven tools in order", () => {
+  it("registers exactly the twenty-eight tools in order", () => {
     expect(tools.map((t) => t.definition.name)).toEqual([
       "project_list",
       "project_create",
@@ -214,6 +220,7 @@ describe("tool definitions", () => {
       "work_principles_discard",
       "publish_context",
       "publish_suggest",
+      "publish_page_get",
     ]);
   });
 
@@ -371,6 +378,20 @@ describe("tool definitions", () => {
     }
   });
 
+  it("describes publish_page_get", () => {
+    const { description } = byName("publish_page_get").definition;
+    for (const phrase of [
+      "not the current marks",
+      "when the user asks you to read or review",
+      "changes nothing",
+      "pending_changes (",
+      "highlighted",
+      "They are not judgment ids",
+    ]) {
+      expect(description).toContain(phrase);
+    }
+  });
+
   it("describes the rules of publish_suggest", () => {
     const { description, inputSchema } = byName("publish_suggest").definition;
     for (const phrase of [
@@ -490,7 +511,9 @@ describe("tool definitions", () => {
       "local",
     ]);
     const update = byName("judgment_update").definition.inputSchema
-      .properties as { scope: { type: string; enum: string[] } };
+      .properties as {
+      scope: { type: string; enum: string[] };
+    };
     expect(update.scope).toMatchObject({
       type: "string",
       enum: ["direction", "local"],
@@ -829,6 +852,39 @@ describe("tool to API mapping", () => {
     expect(api.requests).toHaveLength(1);
     expect(api.requests[0].method).toBe("GET");
     expect(api.requests[0].path).toBe("/api/v1/mcp/publish/context");
+  });
+
+  it("publish_page_get -> GET /api/v1/mcp/publish/page", async () => {
+    const response = {
+      shown: true,
+      url: "https://app.example.test/p/abc",
+      updated_at: "2026-11-01T00:00:00Z",
+      pending_changes: true,
+      changed_parts: [{ part: "judgments", names: ["J"] }],
+      page: {
+        profile: { display_name: null },
+        principles: [],
+        projects: [
+          {
+            key: "p1",
+            workstreams: [
+              { name: "W", judgments: [{ key: "j1", highlighted: true }] },
+            ],
+          },
+        ],
+        skills: [],
+      },
+    };
+    api.respondWith(() => ({ body: response }));
+    const client = createApiClient(api.url, "oat_t");
+
+    const result = await byName("publish_page_get").handler({}, client);
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual(response);
+    expect(api.requests).toHaveLength(1);
+    expect(api.requests[0].method).toBe("GET");
+    expect(api.requests[0].path).toBe("/api/v1/mcp/publish/page");
   });
 
   it("publish_context with before_id -> GET ?before_id=", async () => {
