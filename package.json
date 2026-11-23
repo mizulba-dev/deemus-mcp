@@ -1,6 +1,6 @@
 {
   "name": "deemus-mcp",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Deemus MCP Server",
   "main": "dist/http.js",
   "type": "module",
