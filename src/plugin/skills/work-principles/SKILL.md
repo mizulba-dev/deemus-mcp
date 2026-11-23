@@ -30,7 +30,7 @@ connected and stop.
 
 1. Call `work_principles_context`. It returns `judgments` (id, title,
    involvement, project, workstream, decided_on, situation_or_request,
-   decision, rejected_options, reason; 200 per call, newest first),
+   decision, rejected_options, reason; 10 per call, newest first),
    `principles` (the user's existing ones), `new_judgments` and
    `next_before_id`. Only judgments that set a direction are included:
    delegated judgments, choices that held only for one piece of work, and
