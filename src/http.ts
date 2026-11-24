@@ -24,6 +24,9 @@ export interface HttpMcpServerOptions extends MCPServerOptions {
 
 const OAUTH_SCOPES = ["deemus.read", "deemus.write"] as const;
 const MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024;
+const MAX_CLIENT_ICONS = 32;
+const MAX_ICON_SIZES = 32;
+const MAX_CAPABILITY_ENTRIES = 32;
 
 export async function startHttpMcpServer(
   options: HttpMcpServerOptions = {},
@@ -142,6 +145,16 @@ export async function startHttpMcpServer(
         return;
       }
       sendJsonRpcError(res, 400, -32000, "Bad request");
+      return;
+    }
+
+    if (hasOwnProtoKey(parsedBody)) {
+      sendJsonRpcError(res, 400, -32600, "Invalid request.");
+      return;
+    }
+
+    if (exceedsInitializeEntryLimits(parsedBody)) {
+      sendJsonRpcError(res, 400, -32600, "Invalid request: too many entries.");
       return;
     }
 
@@ -360,6 +373,57 @@ function sendJsonRpcError(
     error: { code, message },
     id: null,
   });
+}
+
+// SDK は method を問わず全メッセージを InitializeRequestSchema に通し、icons・sizes・capabilities の
+// experimental と extensions を件数の上限なしで検証する。
+function exceedsInitializeEntryLimits(body: unknown): boolean {
+  const messages = Array.isArray(body) ? body : [body];
+  return messages.some((message) => {
+    const params = property(message, "params");
+    const capabilities = property(params, "capabilities");
+    for (const key of ["experimental", "extensions"]) {
+      const entries = property(capabilities, key);
+      if (
+        isPlainObject(entries) &&
+        Object.keys(entries).length > MAX_CAPABILITY_ENTRIES
+      ) {
+        return true;
+      }
+    }
+    const icons = property(property(params, "clientInfo"), "icons");
+    if (!Array.isArray(icons)) return false;
+    if (icons.length > MAX_CLIENT_ICONS) return true;
+    return icons.some((icon) => {
+      const sizes = property(icon, "sizes");
+      return Array.isArray(sizes) && sizes.length > MAX_ICON_SIZES;
+    });
+  });
+}
+
+// JSON.parse は "__proto__" を自前キーとして残し、SDK がコピーするとプロトタイプになって前段の検査をすり抜ける。
+function hasOwnProtoKey(body: unknown): boolean {
+  const stack: unknown[] = [body];
+  while (stack.length > 0) {
+    const value = stack.pop();
+    if (Array.isArray(value)) {
+      for (const item of value) stack.push(item);
+    } else if (isPlainObject(value)) {
+      if (Object.hasOwn(value, "__proto__")) return true;
+      for (const item of Object.values(value)) stack.push(item);
+    }
+  }
+  return false;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function property(value: unknown, key: string): unknown {
+  return isPlainObject(value) && Object.hasOwn(value, key)
+    ? value[key]
+    : undefined;
 }
 
 class BodyTooLargeError extends Error {}

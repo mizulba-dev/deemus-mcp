@@ -17,6 +17,42 @@ const initializeBody = JSON.stringify({
   },
 });
 
+function entries(count: number): Record<string, object> {
+  return Object.fromEntries(
+    Array.from({ length: count }, (_, i) => [`k${i}`, {}]),
+  );
+}
+
+function initializeWithIcons(
+  iconCount: number,
+  sizeCount: number,
+  capabilityCount = 0,
+): string {
+  return JSON.stringify({
+    jsonrpc: "2.0",
+    id: 1,
+    method: "initialize",
+    params: {
+      protocolVersion: "2025-03-26",
+      capabilities: {
+        experimental: entries(capabilityCount),
+        extensions: entries(capabilityCount),
+      },
+      clientInfo: {
+        name: "test",
+        version: "0",
+        icons: Array.from({ length: iconCount }, (_, i) => ({
+          src: `https://client.deemus.test/icon-${i}.png`,
+          sizes: Array.from(
+            { length: sizeCount },
+            (_, j) => `${j + 1}x${j + 1}`,
+          ),
+        })),
+      },
+    },
+  });
+}
+
 const postHeaders = {
   "content-type": "application/json",
   accept: "application/json, text/event-stream",
@@ -165,6 +201,90 @@ describe("HTTP MCP server", () => {
     });
 
     expect(response.status).toBe(413);
+  });
+
+  it("accepts initialize with client icons", async () => {
+    const response = await fetch(`${base}/mcp`, {
+      method: "POST",
+      headers: { ...postHeaders, authorization: "Bearer oat_x" },
+      body: initializeWithIcons(2, 2),
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.result.serverInfo).toBeDefined();
+  });
+
+  it("accepts initialize with icons, sizes and capabilities exactly at the limit", async () => {
+    const response = await fetch(`${base}/mcp`, {
+      method: "POST",
+      headers: { ...postHeaders, authorization: "Bearer oat_x" },
+      body: initializeWithIcons(32, 32, 32),
+    });
+
+    expect(response.status).toBe(200);
+  });
+
+  it("rejects icons, sizes or capabilities over the limit as an invalid request", async () => {
+    const toolsList = (params: object) => ({
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/list",
+      params,
+    });
+    for (const body of [
+      initializeWithIcons(33, 1),
+      initializeWithIcons(1, 33),
+      initializeWithIcons(1, 1, 33),
+      `[${initializeWithIcons(33, 1)}]`,
+      JSON.stringify(
+        toolsList({ clientInfo: { icons: Array(33).fill({ sizes: 1 }) } }),
+      ),
+      JSON.stringify(
+        toolsList({ capabilities: { experimental: entries(33) } }),
+      ),
+      JSON.stringify(toolsList({ capabilities: { extensions: entries(33) } })),
+      JSON.stringify([
+        toolsList({}),
+        toolsList({ clientInfo: { icons: Array(33).fill({ sizes: 1 }) } }),
+      ]),
+    ]) {
+      const response = await fetch(`${base}/mcp`, {
+        method: "POST",
+        headers: { ...postHeaders, authorization: "Bearer oat_x" },
+        body,
+      });
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toMatchObject({
+        jsonrpc: "2.0",
+        error: { code: -32600 },
+        id: null,
+      });
+    }
+  });
+
+  it("rejects an own __proto__ key so inherited fields cannot bypass the limit", async () => {
+    const icons = JSON.stringify(
+      Array.from({ length: 33 }, (_, i) => ({
+        src: `https://client.example.test/${i}.png`,
+      })),
+    );
+    const single = `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"__proto__":{"clientInfo":{"name":"t","version":"0","icons":${icons}}},"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"t","version":"0"}}}`;
+    for (const body of [single, `[${single}]`]) {
+      const response = await fetch(`${base}/mcp`, {
+        method: "POST",
+        headers: { ...postHeaders, authorization: "Bearer oat_x" },
+        body,
+      });
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toMatchObject({
+        jsonrpc: "2.0",
+        error: { code: -32600 },
+        id: null,
+      });
+    }
   });
 
   it("answers 401 invalid_token when the API rejects the Bearer", async () => {
