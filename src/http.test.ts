@@ -287,6 +287,91 @@ describe("HTTP MCP server", () => {
     }
   });
 
+  it("rejects an own __proto__ key nested deep inside objects and arrays", async () => {
+    const icons = JSON.stringify(
+      Array.from({ length: 33 }, (_, i) => ({
+        src: `https://client.example.test/${i}.png`,
+      })),
+    );
+    const inClientInfo = `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"__proto__":{"icons":${icons}},"name":"t","version":"0"}}}`;
+    const inNestedArray = `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{"experimental":{"x":{"list":[{"y":{"__proto__":{}}}]}}},"clientInfo":{"name":"t","version":"0"}}}`;
+    for (const single of [inClientInfo, inNestedArray]) {
+      for (const body of [single, `[${single}]`]) {
+        const response = await fetch(`${base}/mcp`, {
+          method: "POST",
+          headers: { ...postHeaders, authorization: "Bearer oat_x" },
+          body,
+        });
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+          jsonrpc: "2.0",
+          error: { code: -32600 },
+          id: null,
+        });
+      }
+    }
+  });
+
+  it("answers 415 to a non-JSON Content-Type and accepts JSON with parameters", async () => {
+    for (const [contentType, status] of [
+      ["text/plain", 415],
+      ["application/x-www-form-urlencoded", 415],
+      ['text/plain; charset="application/json"', 415],
+      ["application/json; charset=utf-8", 200],
+    ] as const) {
+      const response = await fetch(`${base}/mcp`, {
+        method: "POST",
+        headers: {
+          ...postHeaders,
+          "content-type": contentType,
+          authorization: "Bearer oat_x",
+        },
+        body: initializeBody,
+      });
+
+      expect(response.status, contentType).toBe(status);
+      if (status === 415) {
+        await expect(response.json()).resolves.toMatchObject({
+          jsonrpc: "2.0",
+          error: { code: -32000 },
+          id: null,
+        });
+      }
+    }
+  });
+
+  it("accepts a batch of exactly 100 messages and rejects 101", async () => {
+    const batch = (count: number) =>
+      JSON.stringify(
+        Array.from({ length: count }, (_, i) => ({
+          jsonrpc: "2.0",
+          id: i + 1,
+          method: "ping",
+        })),
+      );
+
+    const atLimit = await fetch(`${base}/mcp`, {
+      method: "POST",
+      headers: { ...postHeaders, authorization: "Bearer oat_x" },
+      body: batch(100),
+    });
+    expect(atLimit.status).toBe(200);
+    await expect(atLimit.json()).resolves.toHaveLength(100);
+
+    const overLimit = await fetch(`${base}/mcp`, {
+      method: "POST",
+      headers: { ...postHeaders, authorization: "Bearer oat_x" },
+      body: batch(101),
+    });
+    expect(overLimit.status).toBe(400);
+    await expect(overLimit.json()).resolves.toMatchObject({
+      jsonrpc: "2.0",
+      error: { code: -32600 },
+      id: null,
+    });
+  });
+
   it("answers 401 invalid_token when the API rejects the Bearer", async () => {
     api.respondWith((r) =>
       r.path === "/api/v1/mcp/session"
