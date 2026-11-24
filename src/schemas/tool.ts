@@ -13,6 +13,7 @@ export interface ToolDefinition {
   title?: string;
   description: string;
   annotations?: ToolAnnotations;
+  _meta?: Record<string, unknown>;
   inputSchema: {
     type: "object";
     properties: Record<string, unknown>;
