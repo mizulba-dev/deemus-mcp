@@ -4,6 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 const manifests = [
   "src/plugin/.claude-plugin/plugin.json",
   "src/plugin/.codex-plugin/plugin.json",
+  "src/plugin/.antigravity-plugin/plugin.json",
 ];
 
 if (manifests.every((path) => existsSync(path))) {

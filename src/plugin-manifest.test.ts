@@ -18,6 +18,8 @@ const pluginRoot = join(root, "src/plugin");
 
 const claudeManifest = "src/plugin/.claude-plugin/plugin.json";
 const codexManifest = "src/plugin/.codex-plugin/plugin.json";
+const antigravityManifest = "src/plugin/.antigravity-plugin/plugin.json";
+const antigravityMcpConfig = "src/plugin/mcp_config.json";
 
 function readJson(path: string): Record<string, unknown> {
   return JSON.parse(readFileSync(join(root, path), "utf8"));
@@ -47,11 +49,12 @@ function executableFiles(dir: string): string[] {
 }
 
 describe("plugin manifests", () => {
-  it("keeps package.json and both plugin.json versions in sync", () => {
+  it("keeps package.json and every plugin.json version in sync", () => {
     const mismatches = versionMismatches({
       "package.json": readJson("package.json").version,
       [claudeManifest]: readJson(claudeManifest).version,
       [codexManifest]: readJson(codexManifest).version,
+      [antigravityManifest]: readJson(antigravityManifest).version,
     });
 
     expect(mismatches).toEqual([]);
@@ -83,7 +86,7 @@ describe("plugin manifests", () => {
     }
   });
 
-  it("connects both plugins to the remote server only, with nothing run on connect", () => {
+  it("connects the Claude Code and Codex plugins to the remote server only, with nothing run on connect", () => {
     for (const file of [claudeManifest, codexManifest]) {
       const ref = readJson(file).mcpServers;
       expect(typeof ref, file).toBe("string");
@@ -97,6 +100,17 @@ describe("plugin manifests", () => {
         url: "https://mcp.deemus.app/mcp",
       });
     }
+  });
+
+  it("connects the Antigravity plugin to the remote server only, with nothing run on connect", () => {
+    const servers = readJson(antigravityMcpConfig).mcpServers as Record<
+      string,
+      unknown
+    >;
+
+    expect(Object.keys(servers)).toEqual(["deemus"]);
+    expect(servers.deemus).toEqual({ serverUrl: "https://mcp.deemus.app/mcp" });
+    expect(existsSync(join(pluginRoot, "hooks.json"))).toBe(false);
   });
 
   it("ships no executable files under src/plugin", () => {

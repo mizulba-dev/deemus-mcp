@@ -1,0 +1,19 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "deemus",
+  "displayName": "Deemus",
+  "description": "Deemus — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated.",
+  "version": "0.11.0",
+  "author": {
+    "name": "mizulba"
+  },
+  "homepage": "https://deemus.app",
+  "repository": "https://github.com/mizulba-dev/deemus-mcp",
+  "license": "MIT",
+  "logo": "assets/icon.svg",
+  "suggestedPrompts": [
+    "Record my judgments to Deemus",
+    "Set the scope of my judgments in Deemus",
+    "Sum up my work principles in Deemus"
+  ]
+}

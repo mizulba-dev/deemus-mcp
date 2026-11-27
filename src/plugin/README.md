@@ -20,6 +20,14 @@ codex plugin marketplace add mizulba-dev/deemus-mcp
 codex plugin add deemus@deemus
 ```
 
+### Antigravity
+
+```
+agy plugin install https://github.com/mizulba-dev/deemus-mcp/tree/main/src/plugin
+```
+
+After installing, open `/plugin` in `agy`, expand deemus under Installed, and choose Sign in.
+
 ## Record judgments
 
 When a piece of work is done, ask the AI to "record to Deemus". With this plugin installed, the `record` skill looks back over the conversation and records the judgments you made. In clients without the skill, the Deemus tools describe the essentials of what to record.

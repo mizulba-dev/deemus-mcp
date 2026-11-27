@@ -58,7 +58,7 @@ npm run type-check
 
 ## Plugin
 
-The plugin lives in `src/plugin`, and the marketplace definition in `.claude-plugin/marketplace.json`. See `src/plugin/README.md`.
+The plugin lives in `src/plugin`, and the marketplace definition in `.claude-plugin/marketplace.json`. Antigravity reads `src/plugin/.antigravity-plugin/plugin.json` and `src/plugin/mcp_config.json`. See `src/plugin/README.md`.
 
 ## License
 
