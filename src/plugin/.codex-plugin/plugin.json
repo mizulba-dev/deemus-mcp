@@ -2,7 +2,7 @@
   "name": "deemus",
   "displayName": "Deemus",
   "description": "Deemus — keep the judgments you make while building with AI, and show the ones you choose. Records what you decided, what you adopted from the AI, and what you delegated.",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "interface": {
     "displayName": "Deemus",
     "developerName": "mizulba",
