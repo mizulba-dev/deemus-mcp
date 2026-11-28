@@ -46,9 +46,9 @@ Ask the AI to "sum up my work principles in Deemus". The `work-principles` skill
 
 Ask the AI to "suggest what to show on my page in Deemus". The `publish-prep` skill reads your projects and judgments and sends suggestions of which ones to show and which to highlight, each with a reason. Adopt or turn down each suggestion in Deemus; the AI changes no mark, and you update the page yourself.
 
-### Record and look back automatically in Claude Code and Codex
+### Record and look back automatically in Claude Code, Codex, and Antigravity
 
-Paste this into your global rules (`~/.claude/CLAUDE.md` for Claude Code, `~/.codex/AGENTS.md` for Codex):
+Paste this into your global rules (`~/.claude/CLAUDE.md` for Claude Code, `~/.codex/AGENTS.md` for Codex, `~/.gemini/GEMINI.md` for Antigravity):
 
 ```
 ## Deemus

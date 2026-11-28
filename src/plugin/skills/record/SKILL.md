@@ -52,7 +52,7 @@ is not connected and stop. Do not write judgments anywhere else.
 4. **Record the judgments.** Extract them with the rules below and call
    `judgment_add`:
    - `source.tool`: the name of your work environment, for example
-     `claude-code`, `codex`, `claude-desktop`, `claude-ai` or `chatgpt`.
+     `claude-code`, `codex`, `antigravity`, `claude-desktop`, `claude-ai` or `chatgpt`.
    - `source.session_id`: the ID of the current session when your environment
      exposes one; otherwise leave it out.
    - Up to 20 judgments per call; split larger sets into several calls.
